@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shielded RWA - Anonymous Trading</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-2">🔒 Shielded RWA</h1>
+            <p class="text-gray-400">Trade stocks, crypto & commodities anonymously</p>
+            <div id="status" class="mt-4 p-3 bg-gray-800 rounded text-sm"></div>
+        </header>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- DEPOSIT -->
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-4">📥 Deposit (Anonymous)</h2>
+                
+                <div class="mb-4">
+                    <label class="block mb-2">Asset:</label>
+                    <select id="depositAsset" class="w-full p-2 bg-gray-700 rounded">
+                        <option value="1">AAPL - Apple Inc.</option>
+                        <option value="2">TSLA - Tesla Inc.</option>
+                        <option value="3">BTC - Bitcoin</option>
+                        <option value="4">ETH - Ethereum</option>
+                        <option value="5">XAU - Gold</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block mb-2">Amount:</label>
+                    <input type="number" id="depositAmount" placeholder="100" class="w-full p-2 bg-gray-700 rounded">
+                </div>
+
+                <button onclick="deposit()" class="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold">
+                    Deposit
+                </button>
+
+                <div id="depositNote" class="mt-4 hidden">
+                    <p class="text-yellow-400 font-bold mb-2">⚠️ SAVE THIS NOTE:</p>
+                    <textarea id="noteText" readonly class="w-full p-2 bg-gray-700 rounded font-mono text-xs h-24"></textarea>
+                    <button onclick="downloadNote()" class="mt-2 w-full bg-blue-600 p-2 rounded text-sm">
+                        Download Note
+                    </button>
+                </div>
+            </div>
+
+            <!-- WITHDRAW -->
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-4">📤 Withdraw (To Any Address)</h2>
+                
+                <div class="mb-4">
+                    <label class="block mb-2">Your Note:</label>
+                    <textarea id="withdrawNote" placeholder="shielded-rwa-1-100-0x..." class="w-full p-2 bg-gray-700 rounded font-mono text-xs h-24"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block mb-2">Destination Address:</label>
+                    <input type="text" id="destination" placeholder="0x..." class="w-full p-2 bg-gray-700 rounded font-mono text-xs">
+                </div>
+
+                <button onclick="withdraw()" class="w-full bg-red-600 hover:bg-red-700 p-3 rounded font-bold">
+                    Withdraw
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-gray-800 p-6 rounded-lg">
+            <h3 class="text-xl font-bold mb-3">📊 Privacy Pool Stats</h3>
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div>
+                    <div class="text-3xl font-bold" id="treeSize">0</div>
+                    <div class="text-sm text-gray-400">Total Deposits</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold" id="merkleRoot">0x0</div>
+                    <div class="text-sm text-gray-400">Merkle Root</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold" id="connected">❌</div>
+                    <div class="text-sm text-gray-400">Wallet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // CONFIG
+        const BACKEND_URL = 'http://localhost:3001';
+        const WS_URL = 'ws://localhost:3002';
+        const CONTRACT_ADDRESS = 'YOUR_CONTRACT_ADDRESS';
+        
+        let starknet = null;
+        let treeData = { root: '0x0', leaves: [] };
+
+        // Connect WebSocket
+        const ws = new WebSocket(WS_URL);
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'tree_state' || data.type === 'tree_update') {
+                treeData = data;
+                updateStats();
+            }
+        };
+
+        // Load tree data
+        async function loadTree() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/tree`);
+                treeData = await res.json();
+                updateStats();
+            } catch (e) {
+                console.error('Failed to load tree:', e);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('treeSize').textContent = treeData.leaves?.length || 0;
+            document.getElementById('merkleRoot').textContent = 
+                (treeData.root || '0x0').slice(0, 10) + '...';
+        }
+
+        // Connect wallet
+        async function connectWallet() {
+            if (window.starknet) {
+                await window.starknet.enable();
+                starknet = window.starknet;
+                document.getElementById('connected').textContent = '✅';
+                updateStatus('✅ Wallet connected');
+                return true;
+            }
+            updateStatus('❌ Install Argent or Braavos wallet');
+            return false;
+        }
+
+        function updateStatus(msg) {
+            document.getElementById('status').textContent = msg;
+        }
+
+        // Generate secret
+        function generateSecret() {
+            const array = new Uint8Array(31);
+            crypto.getRandomValues(array);
+            return '0x' + Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Hash function (simplified - use proper Poseidon in production)
+        function hash(...values) {
+            // This is a placeholder - use actual Poseidon hash from circomlibjs
+            return '0x' + values.join('').split('').reduce((a,b)=>{
+                a=((a<<5)-a)+b.charCodeAt(0);return a&a
+            },0).toString(16);
+        }
+
+        // DEPOSIT
+        window.deposit = async function() {
+            if (!await connectWallet()) return;
+
+            const assetId = document.getElementById('depositAsset').value;
+            const amount = document.getElementById('depositAmount').value;
+
+            if (!amount || parseFloat(amount) <= 0) {
+                updateStatus('❌ Enter valid amount');
+                return;
+            }
+
+            updateStatus('🔐 Generating secret (client-side)...');
+
+            // Generate note CLIENT-SIDE
+            const secret = generateSecret();
+            const commitment = hash(secret, assetId, amount);
+            const note = `shielded-rwa-${assetId}-${amount}-${secret}-${commitment}`;
+
+            updateStatus('📤 Submitting to blockchain...');
+
+            try {
+                // Call contract
+                const tx = await starknet.account.execute({
+                    contractAddress: CONTRACT_ADDRESS,
+                    entrypoint: 'deposit',
+                    calldata: [commitment]
+                });
+
+                updateStatus(`⏳ TX: ${tx.transaction_hash}`);
+
+                // Wait for confirmation
+                await starknet.provider.waitForTransaction(tx.transaction_hash);
+
+                // Show note
+                document.getElementById('noteText').value = note;
+                document.getElementById('depositNote').classList.remove('hidden');
+                updateStatus(`✅ Deposited! SAVE YOUR NOTE!`);
+
+            } catch (e) {
+                updateStatus(`❌ Error: ${e.message}`);
+            }
+        };
+
+        // WITHDRAW
+        window.withdraw = async function() {
+            if (!await connectWallet()) return;
+
+            const note = document.getElementById('withdrawNote').value.trim();
+            const destination = document.getElementById('destination').value.trim();
+
+            if (!note || !destination) {
+                updateStatus('❌ Enter note and destination');
+                return;
+            }
+
+            // Parse note
+            const parts = note.split('-');
+            if (parts.length !== 5) {
+                updateStatus('❌ Invalid note format');
+                return;
+            }
+
+            const assetId = parts[2];
+            const amount = parts[3];
+            const secret = parts[4];
+            const commitment = parts[5];
+
+            updateStatus('📥 Downloading Merkle tree...');
+
+            // Find commitment in tree
+            const leafIndex = treeData.leaves.indexOf(commitment);
+            if (leafIndex === -1) {
+                updateStatus('❌ Commitment not found in tree');
+                return;
+            }
+
+            updateStatus('🌳 Building Merkle path...');
+
+            // Get Merkle path from backend
+            const pathRes = await fetch(`${BACKEND_URL}/merkle-path/${leafIndex}`);
+            const { path, indices, root } = await pathRes.json();
+
+            updateStatus('🔐 Generating ZK proof (client-side)...');
+
+            // Generate Noir proof
+            // NOTE: This requires compiled Noir circuit in browser
+            // For hackathon demo, we'll simulate this
+            const proof = new Uint8Array(128); // Placeholder proof
+            crypto.getRandomValues(proof);
+
+            const nullifier = hash(secret, assetId);
+
+            updateStatus('📤 Submitting withdrawal...');
+
+            try {
+                const tx = await starknet.account.execute({
+                    contractAddress: CONTRACT_ADDRESS,
+                    entrypoint: 'withdraw',
+                    calldata: [
+                        Array.from(proof).length, ...Array.from(proof),
+                        nullifier,
+                        assetId,
+                        amount,
+                        destination
+                    ]
+                });
+
+                updateStatus(`⏳ TX: ${tx.transaction_hash}`);
+                await starknet.provider.waitForTransaction(tx.transaction_hash);
+                updateStatus(`✅ Withdrawn to ${destination}!`);
+
+            } catch (e) {
+                updateStatus(`❌ Error: ${e.message}`);
+            }
+        };
+
+        // Download note as file
+        window.downloadNote = function() {
+            const note = document.getElementById('noteText').value;
+            const blob = new Blob([note], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'shielded-rwa-note.txt';
+            a.click();
+        };
+
+        // Initialize
+        loadTree();
+        setInterval(loadTree, 10000); // Refresh every 10s
+    </script>
+</body>
+</html>

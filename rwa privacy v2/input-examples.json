@@ -1,0 +1,38 @@
+{
+  "deposit": {
+    "description": "Generate a shielded deposit commitment",
+    "inputs": {
+      "secret": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd",
+      "asset_id": "1",
+      "amount": "100"
+    },
+    "expected_outputs": {
+      "note_commitment": "computed by circuit",
+      "nullifier": "computed by circuit"
+    }
+  },
+  "withdraw": {
+    "description": "Generate a withdrawal proof with Merkle path",
+    "inputs": {
+      "secret": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd",
+      "asset_id": "1",
+      "amount": "100",
+      "merkle_path": [
+        "0x0", "0x0", "0x0", "0x0", "0x0",
+        "0x0", "0x0", "0x0", "0x0", "0x0",
+        "0x0", "0x0", "0x0", "0x0", "0x0",
+        "0x0", "0x0", "0x0", "0x0", "0x0"
+      ],
+      "path_indices": [
+        "0", "0", "0", "0", "0",
+        "0", "0", "0", "0", "0",
+        "0", "0", "0", "0", "0",
+        "0", "0", "0", "0", "0"
+      ],
+      "merkle_root": "0x0",
+      "nullifier": "computed from secret",
+      "destination": "0x1234567890123456789012345678901234567890123456789012345678901234"
+    },
+    "notes": "Get merkle_path from backend API: GET /merkle-path/:index"
+  }
+}

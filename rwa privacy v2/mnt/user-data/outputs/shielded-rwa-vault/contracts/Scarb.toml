@@ -1,0 +1,10 @@
+[package]
+name = "shielded_rwa_vault"
+version = "1.0.0"
+
+[dependencies]
+starknet = ">=2.7.0"
+
+[[target.starknet-contract]]
+sierra = true
+casm = true

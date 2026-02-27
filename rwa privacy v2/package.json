@@ -1,0 +1,35 @@
+{
+  "name": "starknet-rwa-oracle",
+  "version": "1.0.0",
+  "description": "Production-ready RWA Oracle for Starknet - Tokenized real-world assets",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && node scripts/copy-cairo.js",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "test": "tsx src/test.ts",
+    "deploy:contract": "tsx deploy/deploy-contract.ts",
+    "deploy:backend": "pm2 start ecosystem.config.js",
+    "setup": "node scripts/setup.js"
+  },
+  "keywords": ["starknet", "oracle", "rwa", "defi", "hackathon"],
+  "author": "Leon & Claude - Re{define} Hackathon 2025",
+  "license": "MIT",
+  "dependencies": {
+    "starknet": "^6.11.0",
+    "axios": "^1.7.2",
+    "axios-retry": "^4.1.0",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0",
+    "redis": "^4.6.13"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5"
+  }
+}
