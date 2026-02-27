@@ -1,0 +1,17 @@
+# Render.yaml Configuration for RWA Privacy v2 Oracle Service
+
+services:
+  - type: web
+    name: rwa-privacy-v2-oracle
+    env: node
+    plan: starter
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    github:
+      repo: "Otr437/STARKNET-HACKATHON"
+      branch: main
+    autoDeploy: true
+    envVars:
+      - key: KEY_NAME
+        value: VALUE_HERE
+        # Add more environment variables as needed
