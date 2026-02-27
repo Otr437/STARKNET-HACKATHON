@@ -1,0 +1,57 @@
+[package]
+name = "api-gateway"
+version = "1.0.0"
+edition = "2021"
+authors = ["Crypto Microservices Team"]
+
+[dependencies]
+# Web Framework
+actix-web = "4.9"
+actix-rt = "2.10"
+actix-cors = "0.7"
+
+# Async Runtime
+tokio = { version = "1.42", features = ["full"] }
+futures = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono"] }
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+
+# Authentication & Security
+jsonwebtoken = "9.3"
+bcrypt = "0.16"
+uuid = { version = "1.11", features = ["v4", "serde"] }
+hmac = "0.12"
+sha2 = "0.10"
+
+# HTTP Client
+reqwest = { version = "0.12", features = ["json"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Configuration
+config = "0.14"
+dotenvy = "0.15"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Rate Limiting
+governor = "0.7"
+
+# gRPC
+tonic = "0.12"
+prost = "0.13"
+
+# Metrics
+prometheus = "0.13"
+
+[build-dependencies]
+tonic-build = "0.12"

@@ -1,0 +1,219 @@
+version: '3.8'
+
+services:
+  # ==================== Infrastructure ====================
+  
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: crypto_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: crypto_platform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crypto_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Microservices ====================
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      WALLET_SERVICE_URL: http://wallet-manager:8001
+      ETH_SERVICE_URL: http://ethereum-service:8002
+      BTC_SERVICE_URL: http://bitcoin-service:8003
+      ZCASH_SERVICE_URL: http://zcash-service:8004
+      BNB_SERVICE_URL: http://binance-service:8005
+      SOL_SERVICE_URL: http://solana-service:8006
+      PRICE_SERVICE_URL: http://price-service:8007
+      DEX_SERVICE_URL: http://dex-service:8008
+      ORCHESTRATOR_SERVICE_URL: http://agent-orchestrator:8009
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  wallet-manager:
+    build: ./wallet-manager
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      REDIS_URL: redis://redis:6379
+      ETH_SERVICE_URL: http://ethereum-service:8002
+      BTC_SERVICE_URL: http://bitcoin-service:8003
+      ZCASH_SERVICE_URL: http://zcash-service:8004
+      BNB_SERVICE_URL: http://binance-service:8005
+      SOL_SERVICE_URL: http://solana-service:8006
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  ethereum-service:
+    build: ./ethereum-service
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      ETH_RPC_URL: ${ETH_RPC_URL:-https://eth.llamarpc.com}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  bitcoin-service:
+    build: ./bitcoin-service
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      BTC_RPC_URL: ${BTC_RPC_URL}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  zcash-service:
+    build: ./zcash-service
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      ZCASH_RPC_URL: ${ZCASH_RPC_URL:-http://127.0.0.1:8232}
+      ZCASH_RPC_USER: ${ZCASH_RPC_USER}
+      ZCASH_RPC_PASS: ${ZCASH_RPC_PASS}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  binance-service:
+    build: ./binance-service
+    ports:
+      - "8005:8005"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      BNB_RPC_URL: ${BNB_RPC_URL:-https://bsc-dataseed1.binance.org}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  solana-service:
+    build: ./solana-service
+    ports:
+      - "8006:8006"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      SOL_RPC_URL: ${SOL_RPC_URL:-https://api.mainnet-beta.solana.com}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  price-service:
+    build: ./price-service
+    ports:
+      - "8007:8007"
+    environment:
+      REDIS_URL: redis://redis:6379
+      COINGECKO_API_KEY: ${COINGECKO_API_KEY}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  dex-service:
+    build: ./dex-service
+    ports:
+      - "8008:8008"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      ETH_SERVICE_URL: http://ethereum-service:8002
+      BNB_SERVICE_URL: http://binance-service:8005
+      SOL_SERVICE_URL: http://solana-service:8006
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  agent-orchestrator:
+    build: ./agent-orchestrator
+    ports:
+      - "8009:8009"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      HISTORY_SERVICE_URL: http://message-history:8010
+      TOOLS_SERVICE_URL: http://tool-executor:8011
+      WALLET_SERVICE_URL: http://wallet-manager:8001
+      PRICE_SERVICE_URL: http://price-service:8007
+      DEX_SERVICE_URL: http://dex-service:8008
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  message-history:
+    build: ./message-history
+    ports:
+      - "8010:8010"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  tool-executor:
+    build: ./tool-executor
+    ports:
+      - "8011:8011"
+    environment:
+      DATABASE_URL: postgresql://crypto_user:${POSTGRES_PASSWORD}@postgres:5432/crypto_platform
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  admin-dashboard:
+    build: ./admin-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_WS_URL: ws://localhost:8000
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: crypto-microservices
+    driver: bridge

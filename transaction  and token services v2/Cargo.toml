@@ -1,0 +1,32 @@
+[package]
+name = "transaction-manager-service"
+version = "2.0.0"
+edition = "2021"
+authors = ["Leon Sage <leon@sageaudio.com>"]
+description = "Enhanced transaction manager for blockchain transaction lifecycle management"
+license = "Proprietary"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full"] }
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+ethers = "2.0"
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
+reqwest = { version = "0.11", features = ["json"] }
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+hex = "0.4"
+lazy_static = "1.4"
+dashmap = "5.5"
+rand = "0.8"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
