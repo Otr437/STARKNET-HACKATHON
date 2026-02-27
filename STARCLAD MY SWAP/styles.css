@@ -1,0 +1,133 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #6366f1;
+    --success: #10b981;
+    --error: #ef4444;
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --text: #f1f5f9;
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: var(--bg-secondary);
+    padding: 20px 0;
+    border-bottom: 2px solid var(--primary);
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--error);
+}
+
+.status-dot.connected {
+    background: var(--success);
+}
+
+.card {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border: 1px solid #475569;
+    background: #334155;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+button {
+    background: var(--primary);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.tab {
+    width: auto;
+    padding: 10px 20px;
+}
+
+.tab.active {
+    background: var(--primary);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.result-box {
+    background: #334155;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+.alert.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+}
+
+.alert.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error);
+    color: var(--error);
+}

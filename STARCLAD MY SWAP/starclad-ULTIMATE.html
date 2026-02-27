@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarClad - Complete Web3 DApp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/starknet@5.24.3/dist/starknet.min.js"></script>
+    <script src="https://unpkg.com/get-starknet@3.0.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bitcoinjs-lib@6.1.5/dist/bitcoinjs-lib.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1; --success: #10b981; --error: #ef4444;
+            --bg: #0a0a0f; --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc; --text-secondary: #94a3b8;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        body {
+            font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
+            background-image: 
+                radial-gradient(at 20% 30%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 80% 70%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            min-height: 100vh; line-height: 1.6;
+        }
+        header {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border); padding: 20px 0;
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .header-content {
+            max-width: 1400px; margin: 0 auto; padding: 0 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        h1 {
+            background: var(--gradient-1); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; font-size: 2rem; font-weight: 800;
+        }
+        .wallet-section { display: flex; gap: 10px; align-items: center; }
+        .wallet-btn {
+            padding: 10px 20px; background: var(--gradient-1); border: none;
+            border-radius: 12px; color: white; cursor: pointer; font-weight: 600;
+        }
+        .wallet-connected {
+            padding: 10px 20px; background: var(--glass); border-radius: 12px;
+            border: 1px solid var(--success); color: var(--success);
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        .tabs {
+            display: flex; gap: 12px; padding: 10px; background: var(--glass);
+            border-radius: 20px; margin-bottom: 40px; overflow-x: auto;
+        }
+        .tab {
+            padding: 14px 28px; background: transparent; border: none;
+            color: var(--text-secondary); cursor: pointer; border-radius: 14px;
+            font-size: 1rem; font-weight: 600; transition: all 0.3s;
+        }
+        .tab.active {
+            background: var(--gradient-1); color: white;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+        .card {
+            background: var(--glass); backdrop-filter: blur(20px);
+            padding: 30px; border-radius: 24px; margin-bottom: 24px;
+            border: 1px solid var(--glass-border); transition: all 0.3s;
+        }
+        .card:hover { transform: translateY(-4px); }
+        .card h3 {
+            margin-bottom: 20px; font-weight: 700;
+            background: var(--gradient-1); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .form-group { margin-bottom: 20px; }
+        label {
+            display: block; margin-bottom: 8px; color: var(--text-secondary);
+            font-weight: 500; font-size: 0.9rem; text-transform: uppercase;
+        }
+        input, select {
+            width: 100%; padding: 14px; background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border); border-radius: 12px;
+            color: var(--text); font-size: 1rem;
+        }
+        button {
+            padding: 14px 32px; background: var(--gradient-1); color: white;
+            border: none; border-radius: 12px; cursor: pointer;
+            font-size: 1rem; font-weight: 600; transition: all 0.3s;
+        }
+        button:hover { transform: translateY(-3px); }
+        .alert {
+            padding: 16px; border-radius: 12px; margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .alert.success {
+            background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success);
+            color: var(--success);
+        }
+        .alert.error {
+            background: rgba(239, 68, 68, 0.1); border: 1px solid var(--error);
+            color: var(--error);
+        }
+        .result-box {
+            background: rgba(0, 0, 0, 0.5); padding: 20px; border-radius: 12px;
+            margin-top: 15px; font-family: monospace; font-size: 0.9rem;
+            max-height: 400px; overflow-y: auto;
+        }
+        .grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .stat-card {
+            background: var(--glass); padding: 24px; border-radius: 16px;
+            text-align: center; border: 1px solid var(--glass-border);
+        }
+        .stat-value {
+            font-size: 2.5rem; font-weight: 800; background: var(--gradient-1);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin: 10px 0;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .note-item {
+            background: var(--glass); padding: 15px; border-radius: 12px;
+            margin-bottom: 10px; border-left: 4px solid var(--primary);
+        }
+        .balance-display {
+            background: var(--gradient-1); padding: 30px; border-radius: 16px;
+            text-align: center; margin-bottom: 20px;
+        }
+        .balance-amount { font-size: 3rem; font-weight: 800; color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>🔐 StarClad Privacy Swap</h1>
+            <div class="wallet-section">
+                <button class="wallet-btn" id="connectBtn" onclick="app.connectWallet()">
+                    Connect Starknet Wallet
+                </button>
+                <div id="walletInfo" style="display:none"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="alerts"></div>
+
+        <div class="balance-display" id="balanceDisplay" style="display:none">
+            <div style="color: rgba(255,255,255,0.8);">Your Balance</div>
+            <div class="balance-amount" id="balance">0.00</div>
+            <div style="color: rgba(255,255,255,0.7);" id="token">ETH</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="app.switchTab('wallet')">Wallet</button>
+            <button class="tab" onclick="app.switchTab('notes')">Privacy Notes</button>
+            <button class="tab" onclick="app.switchTab('swaps')">Atomic Swaps</button>
+            <button class="tab" onclick="app.switchTab('bitcoin')">Bitcoin</button>
+            <button class="tab" onclick="app.switchTab('contract')">Contracts</button>
+            <button class="tab" onclick="app.switchTab('stats')">Stats</button>
+        </div>
+
+        <!-- WALLET TAB -->
+        <div id="wallet-tab" class="tab-content active">
+            <div class="card">
+                <h3>Wallet Info</h3>
+                <div id="walletDetails">Connect wallet to see details</div>
+            </div>
+            <div class="card">
+                <h3>Transaction History</h3>
+                <div id="txHistory">No transactions</div>
+            </div>
+        </div>
+
+        <!-- NOTES TAB -->
+        <div id="notes-tab" class="tab-content">
+            <div class="card">
+                <h3>Generate Privacy Note</h3>
+                <div class="form-group">
+                    <label>Amount (sats)</label>
+                    <input type="number" id="noteAmt" placeholder="1000000">
+                </div>
+                <div class="form-group">
+                    <label>Recipient</label>
+                    <input type="text" id="noteRec" placeholder="0x...">
+                </div>
+                <button onclick="app.genNote()">Generate</button>
+                <div id="noteRes" class="result-box" style="display:none"></div>
+            </div>
+            <div class="card">
+                <h3>Your Notes</h3>
+                <div id="notesList"></div>
+            </div>
+        </div>
+
+        <!-- SWAPS TAB -->
+        <div id="swaps-tab" class="tab-content">
+            <div class="card">
+                <h3>Initiate Swap</h3>
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="swapAmt" placeholder="1000000">
+                </div>
+                <div class="form-group">
+                    <label>Recipient</label>
+                    <input type="text" id="swapRec" placeholder="0x...">
+                </div>
+                <div class="form-group">
+                    <label>Timelock (sec)</label>
+                    <input type="number" id="swapTime" value="3600">
+                </div>
+                <button onclick="app.initSwap()">Initiate</button>
+                <div id="swapRes" class="result-box" style="display:none"></div>
+            </div>
+            <div class="card">
+                <h3>Lock Swap</h3>
+                <div class="form-group">
+                    <label>Swap ID</label>
+                    <input type="text" id="lockId" placeholder="0x...">
+                </div>
+                <div class="form-group">
+                    <label>BTC Txid</label>
+                    <input type="text" id="lockTxid">
+                </div>
+                <button onclick="app.lockSwap()">Lock</button>
+                <div id="lockRes" class="result-box" style="display:none"></div>
+            </div>
+            <div class="card">
+                <h3>Complete Swap</h3>
+                <div class="form-group">
+                    <label>Swap ID</label>
+                    <input type="text" id="compId">
+                </div>
+                <div class="form-group">
+                    <label>Secret</label>
+                    <input type="text" id="compSec">
+                </div>
+                <button onclick="app.compSwap()">Complete</button>
+                <div id="compRes" class="result-box" style="display:none"></div>
+            </div>
+        </div>
+
+        <!-- BITCOIN TAB -->
+        <div id="bitcoin-tab" class="tab-content">
+            <div class="card">
+                <h3>SPV Proof</h3>
+                <div class="form-group">
+                    <label>BTC Txid</label>
+                    <input type="text" id="spvTxid">
+                </div>
+                <button onclick="app.genSPV()">Generate</button>
+                <div id="spvRes" class="result-box" style="display:none"></div>
+            </div>
+        </div>
+
+        <!-- CONTRACT TAB -->
+        <div id="contract-tab" class="tab-content">
+            <div class="card">
+                <h3>Commit Note</h3>
+                <div class="form-group">
+                    <label>Commitment</label>
+                    <input type="text" id="contComm">
+                </div>
+                <button onclick="app.commitNote()">Commit to Starknet</button>
+                <div id="contRes" class="result-box" style="display:none"></div>
+            </div>
+            <div class="card">
+                <h3>Contract Addresses</h3>
+                <div class="form-group">
+                    <label>Swap Contract</label>
+                    <input type="text" id="swapAddr" placeholder="0x...">
+                </div>
+                <div class="form-group">
+                    <label>Bridge Contract</label>
+                    <input type="text" id="bridgeAddr" placeholder="0x...">
+                </div>
+                <button onclick="app.saveContracts()">Save</button>
+            </div>
+        </div>
+
+        <!-- STATS TAB -->
+        <div id="stats-tab" class="tab-content">
+            <div class="card">
+                <h3>Statistics</h3>
+                <button onclick="app.loadStats()">Refresh</button>
+                <div id="statsGrid" class="grid" style="margin-top:20px"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align:center; padding:40px; color:var(--text-secondary);">
+        <p>🔐 StarClad - Complete Web3 DApp</p>
+    </footer>
+
+    <script>
+        class StarCladApp {
+            constructor() {
+                this.api = 'https://localhost:3443';
+                this.wallet = null;
+                this.account = null;
+                this.address = null;
+                this.swapContract = '';
+                this.bridgeContract = '';
+                this.notes = [];
+                this.swaps = [];
+            }
+
+            async connectWallet() {
+                try {
+                    const starknet = window.starknet;
+                    if (!starknet) {
+                        this.alert('Install ArgentX or Braavos wallet', 'error');
+                        return;
+                    }
+
+                    await starknet.enable();
+                    this.wallet = starknet;
+                    this.account = starknet.account;
+                    this.address = starknet.selectedAddress;
+
+                    document.getElementById('connectBtn').style.display = 'none';
+                    document.getElementById('walletInfo').style.display = 'block';
+                    document.getElementById('walletInfo').innerHTML = `
+                        <div class="wallet-connected">
+                            🟢 ${this.address.slice(0,6)}...${this.address.slice(-4)}
+                        </div>
+                    `;
+
+                    document.getElementById('balanceDisplay').style.display = 'block';
+                    await this.loadBalance();
+                    await this.loadWalletData();
+                    this.alert('Wallet connected!', 'success');
+                } catch (err) {
+                    this.alert('Connection failed: ' + err.message, 'error');
+                }
+            }
+
+            async loadBalance() {
+                try {
+                    const bal = await this.account.getBalance();
+                    const eth = (parseInt(bal) / 1e18).toFixed(4);
+                    document.getElementById('balance').textContent = eth;
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            async loadWalletData() {
+                const details = `
+                    <p><strong>Address:</strong> ${this.address}</p>
+                    <p><strong>Chain:</strong> ${this.wallet.chainId}</p>
+                    <p><strong>Status:</strong> Connected</p>
+                `;
+                document.getElementById('walletDetails').innerHTML = details;
+                await this.loadNotes();
+                await this.loadSwaps();
+            }
+
+            async call(endpoint, method = 'GET', data = null) {
+                const opts = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors'
+                };
+                if (data && method !== 'GET') opts.body = JSON.stringify(data);
+                
+                const res = await fetch(this.api + endpoint, opts);
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.error || 'Failed');
+                return json;
+            }
+
+            async genNote() {
+                if (!this.address) return this.alert('Connect wallet', 'error');
+                
+                const amt = document.getElementById('noteAmt').value;
+                const rec = document.getElementById('noteRec').value || this.address;
+                if (!amt) return this.alert('Enter amount', 'error');
+
+                try {
+                    const res = await this.call('/api/notes/generate', 'POST', { amount: amt, recipient: rec });
+                    document.getElementById('noteRes').style.display = 'block';
+                    document.getElementById('noteRes').textContent = JSON.stringify(res, null, 2);
+                    this.notes.push(res);
+                    this.alert('Note generated!', 'success');
+                    await this.loadNotes();
+                } catch (err) {
+                    this.alert(err.message, 'error');
+                }
+            }
+
+            async loadNotes() {
+                const div = document.getElementById('notesList');
+                if (this.notes.length === 0) {
+                    div.innerHTML = '<p>No notes yet</p>';
+                    return;
+                }
+                div.innerHTML = this.notes.map((n, i) => `
+                    <div class="note-item">
+                        <strong>Note ${i+1}</strong><br>
+                        Amount: ${n.amountCommitment}<br>
+                        Commitment: ${n.commitment?.slice(0,10)}...
+                    </div>
+                `).join('');
+            }
+
+            async initSwap() {
+                if (!this.address) return this.alert('Connect wallet', 'error');
+                
+                const amt = document.getElementById('swapAmt').value;
+                const rec = document.getElementById('swapRec').value;
+                const time = document.getElementById('swapTime').value;
+                
+                if (!amt || !rec) return this.alert('Fill all fields', 'error');
+
+                try {
+                    const res = await this.call('/api/swaps/initiate', 'POST', {
+                        initiator: this.address,
+                        recipient: rec,
+                        amount: amt,
+                        timelockDuration: parseInt(time)
+                    });
+                    document.getElementById('swapRes').style.display = 'block';
+                    document.getElementById('swapRes').textContent = JSON.stringify(res, null, 2);
+                    this.swaps.push(res);
+                    this.alert('Swap initiated! Save the secret!', 'success');
+                } catch (err) {
+                    this.alert(err.message, 'error');
+                }
+            }
+
+            async lockSwap() {
+                const id = document.getElementById('lockId').value;
+                const txid = document.getElementById('lockTxid').value;
+                if (!id || !txid) return this.alert('Fill all fields', 'error');
+
+                try {
+                    const res = await this.call('/api/swaps/lock', 'POST', { swapId: id, btcTxid: txid });
+                    document.getElementById('lockRes').style.display = 'block';
+                    document.getElementById('lockRes').textContent = JSON.stringify(res, null, 2);
+                    this.alert('Swap locked!', 'success');
+                } catch (err) {
+                    this.alert(err.message, 'error');
+                }
+            }
+
+            async compSwap() {
+                const id = document.getElementById('compId').value;
+                const sec = document.getElementById('compSec').value;
+                if (!id || !sec) return this.alert('Fill all fields', 'error');
+
+                try {
+                    const res = await this.call('/api/swaps/complete', 'POST', { swapId: id, secret: sec });
+                    document.getElementById('compRes').style.display = 'block';
+                    document.getElementById('compRes').textContent = JSON.stringify(res, null, 2);
+                    this.alert('Swap completed!', 'success');
+                } catch (err) {
+                    this.alert(err.message, 'error');
+                }
+            }
+
+            async genSPV() {
+                const txid = document.getElementById('spvTxid').value;
+                if (!txid) return this.alert('Enter txid', 'error');
+
+                try {
+                    const res = await this.call('/api/btc/spv-proof', 'POST', { txid });
+                    document.getElementById('spvRes').style.display = 'block';
+                    document.getElementById('spvRes').textContent = JSON.stringify(res, null, 2);
+                    this.alert('SPV proof generated!', 'success');
+                } catch (err) {
+                    this.alert(err.message, 'error');
+                }
+            }
+
+            async commitNote() {
+                if (!this.account) return this.alert('Connect wallet', 'error');
+                
+                const comm = document.getElementById('contComm').value;
+                if (!comm) return this.alert('Enter commitment', 'error');
+                if (!this.swapContract) return this.alert('Set swap contract address', 'error');
+
+                try {
+                    document.getElementById('contRes').style.display = 'block';
+                    document.getElementById('contRes').textContent = 'Submitting to Starknet...';
+
+                    const tx = await this.account.execute({
+                        contractAddress: this.swapContract,
+                        entrypoint: 'commit_note',
+                        calldata: [comm]
+                    });
+
+                    document.getElementById('contRes').textContent = 
+                        `Transaction Hash: ${tx.transaction_hash}\nWaiting for confirmation...`;
+                    
+                    await this.wallet.provider.waitForTransaction(tx.transaction_hash);
+                    
+                    document.getElementById('contRes').textContent += '\n✅ Confirmed!';
+                    this.alert('Note committed to Starknet!', 'success');
+                } catch (err) {
+                    document.getElementById('contRes').textContent = 'Error: ' + err.message;
+                    this.alert(err.message, 'error');
+                }
+            }
+
+            saveContracts() {
+                this.swapContract = document.getElementById('swapAddr').value;
+                this.bridgeContract = document.getElementById('bridgeAddr').value;
+                localStorage.setItem('swapContract', this.swapContract);
+                localStorage.setItem('bridgeContract', this.bridgeContract);
+                this.alert('Contracts saved!', 'success');
+            }
+
+            async loadSwaps() {
+                // Load from backend or blockchain
+            }
+
+            async loadStats() {
+                try {
+                    const res = await this.call('/api/swaps/stats');
+                    document.getElementById('statsGrid').innerHTML = `
+                        <div class="stat-card">
+                            <div style="color:var(--text-secondary)">Total</div>
+                            <div class="stat-value">${res.total || 0}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div style="color:var(--text-secondary)">Pending</div>
+                            <div class="stat-value">${res.pending || 0}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div style="color:var(--text-secondary)">Completed</div>
+                            <div class="stat-value">${res.completed || 0}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div style="color:var(--text-secondary)">Volume</div>
+                            <div class="stat-value">${res.totalVolume || 0}</div>
+                        </div>
+                    `;
+                } catch (err) {
+                    this.alert(err.message, 'error');
+                }
+            }
+
+            switchTab(name) {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                event.target.classList.add('active');
+                document.getElementById(name + '-tab').classList.add('active');
+            }
+
+            alert(msg, type) {
+                const div = document.createElement('div');
+                div.className = `alert ${type}`;
+                div.textContent = msg;
+                document.getElementById('alerts').appendChild(div);
+                setTimeout(() => div.remove(), 5000);
+            }
+        }
+
+        const app = new StarCladApp();
+
+        // Load saved contracts
+        window.addEventListener('load', () => {
+            const swap = localStorage.getItem('swapContract');
+            const bridge = localStorage.getItem('bridgeContract');
+            if (swap) {
+                app.swapContract = swap;
+                document.getElementById('swapAddr').value = swap;
+            }
+            if (bridge) {
+                app.bridgeContract = bridge;
+                document.getElementById('bridgeAddr').value = bridge;
+            }
+        });
+    </script>
+</body>
+</html>

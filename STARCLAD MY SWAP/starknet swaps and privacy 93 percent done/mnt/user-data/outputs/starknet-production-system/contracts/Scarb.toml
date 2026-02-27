@@ -1,0 +1,17 @@
+[package]
+name = "starknet_production_contracts"
+version = "1.0.0"
+edition = "2024_07"
+
+[dependencies]
+starknet = "2.9.0"
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.20.0" }
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+
+[scripts]
+test = "snforge test"
+build = "scarb build"
+format = "scarb fmt"

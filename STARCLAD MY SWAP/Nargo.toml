@@ -1,0 +1,7 @@
+[package]
+name = "starclad_circuits"
+type = "bin"
+authors = ["StarClad Team"]
+compiler_version = ">=0.23.0"
+
+[dependencies]

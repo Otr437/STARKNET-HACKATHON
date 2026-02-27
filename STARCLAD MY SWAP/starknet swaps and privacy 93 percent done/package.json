@@ -1,0 +1,30 @@
+{
+  "name": "starknet-services-backends",
+  "version": "1.0.0",
+  "description": "Backend services for Starknet contracts",
+  "type": "module",
+  "scripts": {
+    "vault": "node vault-manager/backend/server.js",
+    "btc-swap": "node btc-swap/backend/server.js",
+    "semaphore": "node semaphore/backend/server.js",
+    "dev:vault": "nodemon vault-manager/backend/server.js",
+    "dev:btc-swap": "nodemon btc-swap/backend/server.js",
+    "dev:semaphore": "nodemon semaphore/backend/server.js",
+    "start:all": "concurrently \"npm run vault\" \"npm run btc-swap\" \"npm run semaphore\""
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "starknet": "^6.11.0",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "bitcoinjs-lib": "^6.1.5",
+    "circomlibjs": "^0.1.7",
+    "sqlite3": "^5.1.7",
+    "sqlite": "^5.1.1",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  }
+}
