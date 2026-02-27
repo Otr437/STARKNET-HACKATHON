@@ -1,0 +1,33 @@
+[package]
+name = "starknet_rwa"
+version = "0.1.0"
+edition = "2024_07"
+
+[dependencies]
+starknet = ">=2.8.0"
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+
+[cairo]
+enable-gas = true
+
+# ---- Contract targets ----
+# scarb build will compile all four contracts
+
+[[target.starknet-contract]]
+name = "InflationOracle"
+sierra = true
+
+[[target.starknet-contract]]
+name = "RWAFactory"
+sierra = true
+
+[[target.starknet-contract]]
+name = "RWAToken"
+sierra = true
+
+[[target.starknet-contract]]
+name = "RWAVault"
+sierra = true

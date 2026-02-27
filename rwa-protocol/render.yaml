@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: rwa-protocol-server
+    runtime: node
+    region: oregon
+    plan: starter
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BLS_API_KEY
+        sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: STARKNET_RPC_URL
+        value: https://starknet-mainnet.public.blastapi.io/rpc/v0_7
+    autoDeploy: true

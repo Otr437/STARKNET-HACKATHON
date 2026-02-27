@@ -1,0 +1,22 @@
+{
+  "name": "starknet-rwa-oracle-publisher",
+  "version": "1.0.0",
+  "description": "Off-chain oracle publisher: fetches US BLS CPI and FRED rates, pushes to Starknet InflationOracle",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "dry-run": "ts-node index.ts dry-run",
+    "once": "ts-node index.ts once",
+    "build": "tsc",
+    "serve": "node dist/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "starknet": "^6.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

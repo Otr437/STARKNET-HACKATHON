@@ -1,0 +1,13 @@
+{
+  "name": "rwa-protocol-server",
+  "version": "1.0.0",
+  "description": "Local server for RWA Protocol dashboard — proxies BLS + FRED APIs, serves frontend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev":   "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
