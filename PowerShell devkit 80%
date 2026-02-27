@@ -1,0 +1,2808 @@
+<#
+═══════════════════════════════════════════════════════════
+🔐 CRYPTO-PROTECTED CODE 🔐
+═══════════════════════════════════════════════════════════
+
+Author:           Leon Sage
+Organization:     Sage Audio LLC
+Copyright:        © 2025 Leon Sage. All Rights Reserved.
+License:          Proprietary
+Signed:           2026-02-06 22:00:46
+Certificate:      CodeSigning-LeonSage
+
+CRYPTOGRAPHIC FINGERPRINT:
+SHA-256:  879BB5DA194A8925970A933E51325C23DD7B6BFBA33C9E2477F7CF26C80F41BA
+SHA-512:  52BE35C0077D7063DFDF6999868CC7E791C9354920B17D1B0836C2FF7C3D666E39EB8239ADFCA68CEECDA63EB17D69C5AE047687BCFCDE0CBD96615BEB6C8250
+MD5:      30B2AE88E1155E1FAC72ADCE0AA4C593
+File Size: 87942 bytes
+
+LICENSE:
+PROPRIETARY LICENSE
+
+Copyright (c) 2026 Leon Sage. All Rights Reserved.
+Sage Audio LLC
+
+This software is proprietary and confidential property of Leon Sage.
+UNAUTHORIZED COPYING, MODIFICATION, DISTRIBUTION, OR USE IS STRICTLY PROHIBITED.
+
+⚠️  ANTI-THEFT NOTICE:
+This code is cryptographically signed and protected. Any
+unauthorized modification, distribution, or removal of this
+protection constitutes copyright infringement.
+═══════════════════════════════════════════════════════════
+#>
+#Requires -RunAsAdministrator
+
+<#
+.SYNOPSIS
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║         STARKNET DEVELOPMENT KIT - ULTIMATE EDITION           ║
+    ║           Powered by Leon & Claude AI Revolution              ║
+    ║                    Version 2.0.0 BEAST MODE                   ║
+    ╚═══════════════════════════════════════════════════════════════╝
+    
+.DESCRIPTION
+    The most advanced, feature-rich, and beautiful StarkNet development 
+    environment manager ever created for Windows. Period.
+    
+    This isn't just a script. This is a complete development orchestration 
+    platform that makes setting up StarkNet development feel like magic.
+    
+    FEATURES:
+    • Real-time system monitoring with live metrics
+    • Intelligent dependency resolution
+    • Parallel installation engine
+    • Auto-recovery and error correction
+    • Network diagnostics and health checks
+    • Project templates and scaffolding
+    • Integrated package management
+    • Performance profiling
+    • Smart caching system
+    • Automated backups
+    • Version management
+    • Security scanning
+    • Resource optimization
+    • Multi-environment support
+    • CI/CD pipeline integration
+    • Developer analytics
+    • And so much more...
+    
+.NOTES
+    Authors: Leon & Claude - The AI Power Duo
+    Version: 2.0.0 - BEAST MODE (FIXED)
+    License: MIT
+    Requires: Windows 10/11, PowerShell 5.1+, Administrator privileges
+    
+    "When AI meets human vision, magic happens" - Leon & Claude, 2026
+    
+    FIXES APPLIED:
+    • Proper WSL/Windows command separation
+    • Corrected file path handling between environments
+    • Fixed environment variable expansion
+    • Added proper error handling for cross-platform operations
+    • Ensured all WSL operations run in WSL context
+    • Ensured all Windows operations run in Windows context
+    • [v2.0.1] CRITICAL: All WSL commands now use -u user to force user context
+    • [v2.0.1] Invoke-WSLCommand uses bash -lc (login shell) to inherit PATH
+    • [v2.0.1] WSLHomeDir defaults to /home/user, validated against /root
+    • [v2.0.1] All .bashrc PATH appends guarded against duplicates (grep -q)
+    • [v2.0.1] Fixed invalid -Or syntax in Hardhat/Snarkjs state checks
+    • [v2.0.1] Open-WSLTerminal launches as target user, not root
+    • [v2.0.1] Tools install to \\wsl.localhost\Ubuntu-22.04\home\user
+#>
+
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$Host.UI.RawUI.WindowTitle = "StarkNet DevKit 3.0 - BEAST MODE 2026 | Leon & Claude AI Power"
+
+#region Global Configuration & Advanced Settings
+
+$script:Config = @{
+    Version = "3.0.0-2026-BEAST"
+    BuildNumber = "BEAST-MODE-2026-ULTIMATE"
+    WSLDistro = ''  # Auto-detected at runtime
+    WSLTargetUser = ''  # Auto-detected at runtime from WSL whoami
+    StarkNetDir = "$env:USERPROFILE\StarkNetDev"
+    WSLHomeDir = ''     # Auto-detected at runtime
+    WSLUsername = ''    # Auto-detected at runtime
+    ConfigFile = "$env:USERPROFILE\.starknet-devkit.json"
+    LogFile = "$env:USERPROFILE\StarkNetDev\devkit.log"
+    CacheDir = "$env:USERPROFILE\StarkNetDev\.cache"
+    BackupDir = "$env:USERPROFILE\StarkNetDev\backups"
+    ProjectsDir = "$env:USERPROFILE\StarkNetDev\projects"
+    PerformanceMode = $true
+    EnableTelemetry = $false
+    AutoBackup = $true
+    ParallelInstalls = $true
+    MaxParallelJobs = 4
+    UseStarkup = $true   # 2026: Use starkup unified installer
+}
+
+$script:Colors = @{
+    Primary = 'Cyan'
+    Secondary = 'Magenta'
+    Success = 'Green'
+    Warning = 'Yellow'
+    Error = 'Red'
+    Info = 'White'
+    Muted = 'DarkGray'
+    Highlight = 'Blue'
+    Gold = 'Yellow'
+    Purple = 'Magenta'
+    Prompt = 'Cyan'
+}
+
+$script:Symbols = @{
+    Check = '✓'
+    Cross = '✗'
+    Arrow = '→'
+    Bullet = '•'
+    Star = '★'
+    Diamond = '◆'
+    Info = 'ℹ'
+    Warning = '⚠'
+    Loading = '⟳'
+    Rocket = '🚀'
+    Fire = '🔥'
+    Lightning = '⚡'
+    Gear = '⚙'
+    Package = '📦'
+    Chart = '📊'
+    Trophy = '🏆'
+    Brain = '🧠'
+}
+
+$script:InstallationState = @{
+    WSL2 = $false
+    Ubuntu = $false
+    Scarb = $false
+    StarknetFoundry = $false
+    StarknetDevnet = $false
+    Starkli = $false
+    StarknetJS = $false
+    StarknetPy = $false
+    NodeJS = $false
+    Python3 = $false
+    Rust = $false
+    Docker = $false
+    # NEW 2026 TOOLS
+    Dojo = $false              # Dojo Engine - Provable game engine
+    Katana = $false            # Katana - Local Starknet sequencer
+    Torii = $false             # Torii - Dojo indexing layer
+    Sozo = $false              # Sozo - Dojo deployment tool
+    StwoProver = $false        # S-two - Next-gen prover (2026)
+    Garaga = $false            # Garaga - High-performance crypto toolkit
+    # ZKP & EVM TOOLS
+    Hardhat = $false           # Hardhat - Ethereum development
+    Foundry = $false           # Foundry - Ethereum toolkit (forge, anvil, cast)
+    Noir = $false              # Noir - ZKP language (nargo)
+    Circom = $false            # Circom - ZKP circuit language
+    Snarkjs = $false           # SnarkJS - zkSNARK JavaScript library
+}
+
+$script:SystemMetrics = @{
+    CPUUsage = 0
+    MemoryUsage = 0
+    DiskSpace = 0
+    WSLMemory = 0
+    NetworkSpeed = 0
+    ActiveProcesses = 0
+    LastUpdate = (Get-Date)
+}
+
+$script:Analytics = @{
+    SessionStart = (Get-Date)
+    CommandsExecuted = 0
+    ToolsInstalled = 0
+    ProjectsCreated = 0
+    ErrorsEncountered = 0
+    TotalInstallTime = [TimeSpan]::Zero
+}
+
+$script:Cache = @{
+    VersionInfo = @{}
+    DownloadCache = @{}
+    StateCache = @{}
+}
+
+#endregion
+
+#region Epic ASCII Art & Advanced UI System
+
+function Show-WelcomeAnimation {
+    Clear-Host
+    $frames = @(
+        @"
+    ███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███╗   ██╗███████╗████████╗
+    ██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║ ██╔╝████╗  ██║██╔════╝╚══██╔══╝
+    ███████╗   ██║   ███████║██████╔╝█████╔╝ ██╔██╗ ██║█████╗     ██║   
+    ╚════██║   ██║   ██╔══██║██╔══██╗██╔═██╗ ██║╚██╗██║██╔══╝     ██║   
+    ███████║   ██║   ██║  ██║██║  ██║██║  ██╗██║ ╚████║███████╗   ██║   
+    ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   
+"@,
+        @"
+    ███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███╗   ██╗███████╗████████╗
+    ██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║ ██╔╝████╗  ██║██╔════╝╚══██╔══╝
+    ███████╗   ██║   ███████║██████╔╝█████╔╝ ██╔██╗ ██║█████╗     ██║   
+    ╚════██║   ██║   ██╔══██║██╔══██╗██╔═██╗ ██║╚██╗██║██╔══╝     ██║   
+    ███████║   ██║   ██║  ██║██║  ██║██║  ██╗██║ ╚████║███████╗   ██║   
+    ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   
+"@
+    )
+    
+    $colors = @('DarkCyan', 'Cyan', 'White', 'Cyan', 'DarkCyan')
+    
+    for ($i = 0; $i -lt 3; $i++) {
+        Clear-Host
+        Write-Host ""
+        Write-Host $frames[0] -ForegroundColor $colors[$i % $colors.Count]
+        Start-Sleep -Milliseconds 150
+    }
+}
+
+function Show-Banner {
+    Clear-Host
+    Write-Host ""
+    
+    # Get terminal width for centering
+    $termWidth = $Host.UI.RawUI.WindowSize.Width
+    if ($termWidth -lt 80) { $termWidth = 80 }
+    $indent = " " * [math]::Max(0, [math]::Floor(($termWidth - 76) / 2))
+    
+    # Epic animated banner
+    $banner = @"
+    ███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███╗   ██╗███████╗████████╗
+    ██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║ ██╔╝████╗  ██║██╔════╝╚══██╔══╝
+    ███████╗   ██║   ███████║██████╔╝█████╔╝ ██╔██╗ ██║█████╗     ██║   
+    ╚════██║   ██║   ██╔══██║██╔══██╗██╔═██╗ ██║╚██╗██║██╔══╝     ██║   
+    ███████║   ██║   ██║  ██║██║  ██║██║  ██╗██║ ╚████║███████╗   ██║   
+    ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   
+"@
+    
+    # Print each banner line with centering indent
+    $banner -split "`n" | ForEach-Object {
+        if ($_.Trim() -ne "") {
+            Write-Host "$indent$_" -ForegroundColor $Colors.Primary
+        }
+    }
+
+    Write-ColorText "${indent}    ╔════════════════════════════════════════════════════════════╗" $Colors.Gold
+    Write-ColorText "${indent}    ║       🚀 DEVELOPMENT KIT 3.0 - BEAST MODE 2026 🚀          ║" $Colors.Gold
+    Write-ColorText "${indent}    ║                                                            ║" $Colors.Secondary
+    Write-Host "${indent}    ║        " -NoNewline -ForegroundColor $Colors.Secondary
+    Write-ColorText "Powered by " $Colors.Info -NoNewline
+    Write-ColorText "LEON & CLAUDE" $Colors.Success -NoNewline
+    Write-ColorText " - The AI Revolution      ║" $Colors.Secondary
+    Write-ColorText "${indent}    ║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}    ║      Layer 2 Scaling • Cairo • Zero-Knowledge • ZK-STARKs ║" $Colors.Muted
+    Write-ColorText "${indent}    ╚════════════════════════════════════════════════════════════╝" $Colors.Gold
+    
+    # System status bar
+    Write-Host ""
+    $version = $Config.Version
+    $wslStatus = if ($InstallationState.WSL2) { "$($Symbols.Check) Active" } else { "$($Symbols.Cross) Not Installed" }
+    $ubuntuStatus = if ($InstallationState.Ubuntu) { "$($Symbols.Check) Ready" } else { "$($Symbols.Cross) Not Installed" }
+    $userDisplay = if ($Config.WSLUsername -and $Config.WSLUsername -ne '') { " | User: $($Config.WSLUsername)" } else { "" }
+    
+    Write-Host "${indent}    Version: " -NoNewline -ForegroundColor $Colors.Muted
+    Write-ColorText "$version" $Colors.Info -NoNewline
+    Write-Host "  |  WSL2: " -NoNewline -ForegroundColor $Colors.Muted
+    Write-ColorText "$wslStatus" $(if ($InstallationState.WSL2) { $Colors.Success } else { $Colors.Error }) -NoNewline
+    Write-Host "  |  Ubuntu: " -NoNewline -ForegroundColor $Colors.Muted
+    Write-ColorText "$ubuntuStatus" $(if ($InstallationState.Ubuntu) { $Colors.Success } else { $Colors.Error }) -NoNewline
+    if ($userDisplay) {
+        Write-ColorText "$userDisplay" $Colors.Primary
+    } else {
+        Write-Host ""
+    }
+    Write-Host ""
+}
+
+function Write-ColorText {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Text,
+        [string]$Color = 'White',
+        [switch]$NoNewline
+    )
+    
+    if ($NoNewline) {
+        Write-Host $Text -ForegroundColor $Color -NoNewline
+    } else {
+        Write-Host $Text -ForegroundColor $Color
+    }
+}
+
+function Write-Section {
+    param([string]$Title)
+    Write-Host ""
+    Write-ColorText "  ╔════════════════════════════════════════════════════════════╗" $Colors.Secondary
+    Write-ColorText "  ║  $Title" $Colors.Primary -NoNewline
+    $padding = 59 - $Title.Length
+    Write-Host (" " * $padding) -NoNewline
+    Write-ColorText "║" $Colors.Secondary
+    Write-ColorText "  ╚════════════════════════════════════════════════════════════╝" $Colors.Secondary
+    Write-Host ""
+}
+
+function Write-Step {
+    param(
+        [string]$Message,
+        [switch]$Success,
+        [switch]$Warning,
+        [switch]$Error
+    )
+    
+    if ($Success) {
+        Write-ColorText "  $($Symbols.Check) " $Colors.Success -NoNewline
+        Write-ColorText $Message $Colors.Info
+    } elseif ($Warning) {
+        Write-ColorText "  $($Symbols.Warning) " $Colors.Warning -NoNewline
+        Write-ColorText $Message $Colors.Info
+    } elseif ($Error) {
+        Write-ColorText "  $($Symbols.Cross) " $Colors.Error -NoNewline
+        Write-ColorText $Message $Colors.Info
+    } else {
+        Write-ColorText "  $($Symbols.Arrow) " $Colors.Primary -NoNewline
+        Write-ColorText $Message $Colors.Info
+    }
+}
+
+function Write-Progress {
+    param(
+        [int]$Current,
+        [int]$Total,
+        [string]$Activity
+    )
+    
+    $percent = [math]::Round(($Current / $Total) * 100)
+    $barLength = 40
+    $filled = [math]::Round(($percent / 100) * $barLength)
+    $empty = $barLength - $filled
+    
+    $bar = "█" * $filled + "░" * $empty
+    
+    Write-Host "  " -NoNewline
+    Write-ColorText "[$bar]" $Colors.Primary -NoNewline
+    Write-ColorText " $percent%" $Colors.Success -NoNewline
+    Write-ColorText " - $Activity" $Colors.Info
+}
+
+function Write-Success {
+    param([string]$Message)
+    Write-Step -Message $Message -Success
+}
+
+function Write-Warning {
+    param([string]$Message)
+    Write-Step -Message $Message -Warning
+}
+
+function Write-Error {
+    param([string]$Message)
+    Write-Step -Message $Message -Error
+}
+
+function Write-Info {
+    param([string]$Message)
+    Write-Step -Message $Message
+}
+
+function Write-MenuOption {
+    param(
+        [string]$Key,
+        [string]$Description,
+        [string]$Icon = "",
+        [bool]$Installed = $false
+    )
+    
+    # CRITICAL FIX: Ensure Installed is always a proper bool (hashtable lookups return Object[])
+    $isInstalled = [bool]$Installed
+    $status = if ($isInstalled) { " [$($Symbols.Check) Installed]" } else { "" }
+    $statusColor = if ($isInstalled) { $Colors.Success } else { $Colors.Muted }
+    $displayIcon = if ($Icon -ne "") { "$Icon " } else { "" }
+    
+    # Center-aware padding: key=6 + icon+desc fill to 52 chars
+    $lineContent = "[$Key] $displayIcon$Description$status"
+    
+    Write-ColorText "    [$Key] " $Colors.Primary -NoNewline
+    Write-Host "$displayIcon$Description" -NoNewline -ForegroundColor $Colors.Info
+    if ($status -ne "") {
+        Write-ColorText $status $statusColor
+    } else {
+        Write-Host ""
+    }
+}
+
+function Start-Spinner {
+    param(
+        [string]$Message,
+        [scriptblock]$Action
+    )
+    
+    $spinner = @('⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏')
+    $i = 0
+    
+    $job = Start-Job -ScriptBlock $Action
+    
+    while ($job.State -eq 'Running') {
+        Write-Host "`r  $($spinner[$i % $spinner.Count]) $Message" -NoNewline -ForegroundColor $Colors.Primary
+        Start-Sleep -Milliseconds 100
+        $i++
+    }
+    
+    $result = Receive-Job -Job $job
+    Remove-Job -Job $job
+    
+    Write-Host "`r" -NoNewline
+    return $result
+}
+
+function Confirm-Action {
+    param([string]$Message)
+    
+    Write-Host ""
+    Write-ColorText "  $($Symbols.Warning) $Message (Y/N): " $Colors.Warning -NoNewline
+    $response = Read-Host
+    return $response -eq 'Y' -or $response -eq 'y'
+}
+
+#endregion
+
+#region Core Utility Functions
+
+function Test-Administrator {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [Security.Principal.WindowsPrincipal] $identity
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Write-Log {
+    param(
+        [string]$Message,
+        [ValidateSet('Info', 'Warning', 'Error', 'Success')]
+        [string]$Level = 'Info'
+    )
+    
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logMessage = "[$timestamp] [$Level] $Message"
+    
+    # Ensure log directory exists (WINDOWS PATH)
+    $logDir = Split-Path -Parent $Config.LogFile
+    if (!(Test-Path $logDir)) {
+        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+    }
+    
+    # Write to log file (WINDOWS OPERATION)
+    Add-Content -Path $Config.LogFile -Value $logMessage
+}
+
+function Invoke-WSLCommand {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Command,
+        [switch]$Silent,
+        [switch]$IgnoreErrors
+    )
+    
+    Write-Log "Executing WSL command: $Command"
+    
+    try {
+        # Auto-detect distro if not yet configured - never run with empty distro
+        if ([string]::IsNullOrWhiteSpace($Config.WSLDistro)) {
+            $detected = Find-BestWSLDistro
+            if ([string]::IsNullOrWhiteSpace($detected)) {
+                throw "WSL distro not configured and none detected. Please select [X] Set My WSL Path from the menu first."
+            }
+            $Config.WSLDistro = $detected
+            Write-Log "Auto-detected WSL distro: $detected"
+        }
+        $result = wsl -d $Config.WSLDistro -- bash -c ". ~/.profile 2>/dev/null; . ~/.bashrc 2>/dev/null; $Command" 2>&1
+        
+        if (!$Silent) {
+            $result | ForEach-Object {
+                Write-ColorText "    $_" $Colors.Muted
+            }
+        }
+        
+        if ($LASTEXITCODE -ne 0 -and !$IgnoreErrors) {
+            Write-Log "WSL command failed (exit $LASTEXITCODE): $Command" -Level Error
+            throw "Command execution failed with exit code: $LASTEXITCODE"
+        }
+        
+        return $result
+    }
+    catch {
+        Write-Log "WSL command error: $_" -Level Error
+        if (!$IgnoreErrors) {
+            throw
+        }
+    }
+}
+
+function Get-WSLPath {
+    param([string]$WindowsPath)
+    
+    # Convert Windows path to WSL path
+    $wslPath = $WindowsPath -replace '\\', '/'
+    $wslPath = $wslPath -replace '^([A-Z]):', { "/mnt/$($_.Groups[1].Value.ToLower())" }
+    return $wslPath
+}
+
+function Get-WindowsPath {
+    param([string]$WSLPath)
+    
+    # Convert WSL path to Windows path
+    if ($WSLPath -match '^/mnt/([a-z])/(.+)$') {
+        $drive = $matches[1].ToUpper()
+        $path = $matches[2] -replace '/', '\'
+        return "${drive}:\$path"
+    }
+    
+    # If it's a home directory path, we need to get the actual Windows path
+    if ($WSLPath -match '^~/?(.*)$' -or $WSLPath -match '^/home/[^/]+/?(.*)$') {
+        $relativePath = $matches[1]
+        $wslHome = Invoke-WSLCommand "echo `$HOME" -Silent
+        $windowsHome = "\\wsl.localhost\$($Config.WSLDistro)$wslHome"
+        if ($relativePath) {
+            return Join-Path $windowsHome $relativePath
+        }
+        return $windowsHome
+    }
+    
+    return $WSLPath
+}
+
+function Test-WSLCommandExists {
+    param([string]$Command)
+    
+    # RUNS IN WSL
+    try {
+        $result = Invoke-WSLCommand "command -v $Command" -Silent -IgnoreErrors
+        return $LASTEXITCODE -eq 0
+    }
+    catch {
+        return $false
+    }
+}
+
+function Get-WSLVersion {
+    param([string]$Command)
+    
+    # RUNS IN WSL
+    try {
+        $version = Invoke-WSLCommand "$Command --version 2>&1 | head -n 1" -Silent
+        return $version
+    }
+    catch {
+        return "Unknown"
+    }
+}
+
+function Initialize-WSLEnvironment {
+    Write-Info "Setting up WSL environment..."
+    Write-Host ""
+    Write-ColorText "  ================================================================" $Colors.Gold
+    Write-ColorText "  PASTE YOUR WSL PATH FROM WINDOWS EXPLORER ADDRESS BAR" $Colors.Gold
+    Write-ColorText "  Example: \\wsl.localhost\Ubuntu-22.04\home\otr1307" $Colors.Info
+    Write-ColorText "  ================================================================" $Colors.Gold
+    Write-Host ""
+    Write-ColorText "  Your WSL path: " $Colors.Prompt -NoNewline
+    $inputPath = (Read-Host).Trim()
+
+    $inputPath = $inputPath.TrimStart('\')
+    $parts = $inputPath -split '[\\]' | Where-Object { $_ -ne "" }
+
+    if ($parts.Count -ge 4) {
+        $Config.WSLDistro     = $parts[1]
+        $Config.WSLTargetUser = $parts[3]
+    } elseif ($parts.Count -ge 3) {
+        $Config.WSLDistro     = $parts[0]
+        $Config.WSLTargetUser = $parts[2]
+    } else {
+        Write-ColorText "  Enter distro name (e.g. Ubuntu-22.04): " $Colors.Prompt -NoNewline
+        $Config.WSLDistro = (Read-Host).Trim()
+        Write-ColorText "  Enter your username (e.g. otr1307): " $Colors.Prompt -NoNewline
+        $Config.WSLTargetUser = (Read-Host).Trim()
+    }
+
+    $Config.WSLUsername = $Config.WSLTargetUser
+    $Config.WSLHomeDir  = "/home/$($Config.WSLTargetUser)"
+
+    Write-Host ""
+    Write-Success "Distro : $($Config.WSLDistro)"
+    Write-Success "User   : $($Config.WSLTargetUser)"
+    Write-Success "Home   : $($Config.WSLHomeDir)"
+
+    wsl -d $Config.WSLDistro -- bash -lc "mkdir -p ~/starknet-projects" 2>$null | Out-Null
+}
+
+function Save-Config {
+    # WINDOWS OPERATION - save to Windows filesystem
+    try {
+        $configJson = $Config | ConvertTo-Json -Depth 10
+        $configJson | Out-File -FilePath $Config.ConfigFile -Encoding UTF8 -Force
+        Write-Log "Configuration saved"
+    }
+    catch {
+        Write-Log "Failed to save configuration: $_" -Level Error
+    }
+}
+
+function Load-Config {
+    # WINDOWS OPERATION - load from Windows filesystem
+    if (Test-Path $Config.ConfigFile) {
+        try {
+            $savedConfig = Get-Content -Path $Config.ConfigFile -Raw | ConvertFrom-Json
+            
+            # Merge saved config with defaults
+            $savedConfig.PSObject.Properties | ForEach-Object {
+                if ($Config.ContainsKey($_.Name)) {
+                    $Config[$_.Name] = $_.Value
+                }
+            }
+            
+            Write-Log "Configuration loaded"
+        }
+        catch {
+            Write-Log "Failed to load configuration: $_" -Level Error
+        }
+    }
+}
+
+function Test-InternetConnection {
+    # WINDOWS OPERATION
+    try {
+        $result = Test-Connection -ComputerName "8.8.8.8" -Count 1 -Quiet
+        return $result
+    }
+    catch {
+        return $false
+    }
+}
+
+function Test-WSLInstalled {
+    # WINDOWS OPERATION - check if WSL is installed
+    try {
+        $wslInfo = wsl --list --verbose 2>&1
+        return $LASTEXITCODE -eq 0
+    }
+    catch {
+        return $false
+    }
+}
+
+function Get-CleanWSLList {
+    # wsl --list outputs UTF-16 with null bytes - strip them
+    $raw = (wsl --list --quiet 2>&1) | Out-String
+    $clean = $raw -replace "`0", ""
+    return ($clean -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
+}
+
+function Find-BestWSLDistro {
+    $lines = Get-CleanWSLList
+    foreach ($p in @('Ubuntu-22.04','Ubuntu-24.04','Ubuntu-20.04','Ubuntu')) {
+        if ($lines -contains $p) { return $p }
+    }
+    return ($lines | Select-Object -First 1)
+}
+
+function Test-UbuntuInstalled {
+    if ([string]::IsNullOrWhiteSpace($Config.WSLDistro)) {
+        $Config.WSLDistro = Find-BestWSLDistro
+    }
+    if ([string]::IsNullOrWhiteSpace($Config.WSLDistro)) { return $false }
+    return ((Get-CleanWSLList) -contains $Config.WSLDistro)
+}
+
+#endregion
+
+
+function Set-MyWSLPath {
+    Clear-Host
+    Write-Host ""
+    Write-Host "  ================================================" -ForegroundColor Yellow
+    Write-Host "  SET YOUR WSL PATH" -ForegroundColor Yellow
+    Write-Host "  ================================================" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  Open Windows Explorer, go to your Linux home." -ForegroundColor White
+    Write-Host "  Copy the path from the address bar. Example:" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  \\wsl.localhost\Ubuntu-22.04\home\otr1307" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  Paste your path: " -ForegroundColor Cyan -NoNewline
+    $raw = (Read-Host).Trim().TrimStart("\")
+    $parts = $raw -split "[\\]" | Where-Object { $_ -ne "" }
+
+    if ($parts.Count -ge 4) {
+        $Config.WSLDistro     = $parts[1]
+        $Config.WSLTargetUser = $parts[3]
+    } elseif ($parts.Count -ge 3) {
+        $Config.WSLDistro     = $parts[0]
+        $Config.WSLTargetUser = $parts[2]
+    } else {
+        Write-Host "  Distro (e.g. Ubuntu-22.04): " -ForegroundColor Cyan -NoNewline
+        $Config.WSLDistro = (Read-Host).Trim()
+        Write-Host "  Username (e.g. otr1307): " -ForegroundColor Cyan -NoNewline
+        $Config.WSLTargetUser = (Read-Host).Trim()
+    }
+
+    $Config.WSLUsername = $Config.WSLTargetUser
+    $Config.WSLHomeDir  = "/home/$($Config.WSLTargetUser)"
+
+    Write-Host ""
+    Write-Host "  SAVED:" -ForegroundColor Green
+    Write-Host "  Distro : $($Config.WSLDistro)" -ForegroundColor Green
+    Write-Host "  User   : $($Config.WSLTargetUser)" -ForegroundColor Green
+    Write-Host "  Home   : $($Config.WSLHomeDir)" -ForegroundColor Green
+    Write-Host ""
+    Save-Config
+    Write-Host "  Press any key to continue..." -ForegroundColor White
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
+
+#region Installation State Management
+
+function Update-InstallationState {
+    # Check WSL2 (WINDOWS OPERATION)
+    $InstallationState.WSL2 = Test-WSLInstalled
+    
+    # Check Ubuntu (WINDOWS OPERATION)
+    $InstallationState.Ubuntu = Test-UbuntuInstalled
+    
+    if ($InstallationState.Ubuntu) {
+        # User and distro already set at startup - skip silent detection
+        
+        # Check tools in WSL (ALL RUN IN WSL)
+        $InstallationState.Scarb = [bool](Test-WSLCommandExists "scarb")
+        $InstallationState.StarknetFoundry = [bool](Test-WSLCommandExists "snforge")
+        $InstallationState.Starkli = [bool](Test-WSLCommandExists "starkli")
+        $InstallationState.NodeJS = [bool](Test-WSLCommandExists "node")
+        $InstallationState.Python3 = [bool](Test-WSLCommandExists "python3")
+        $InstallationState.Rust = [bool](Test-WSLCommandExists "rustc")
+        
+        # Check 2026 tools (ALL RUN IN WSL)
+        $InstallationState.Dojo = [bool](Test-WSLCommandExists "dojo")
+        $InstallationState.Katana = [bool](Test-WSLCommandExists "katana")
+        $InstallationState.Torii = [bool](Test-WSLCommandExists "torii")
+        $InstallationState.Sozo = [bool](Test-WSLCommandExists "sozo")
+        
+        # Check ZKP & EVM tools (ALL RUN IN WSL)
+        $InstallationState.Hardhat = [bool]((Test-WSLCommandExists "hardhat") -or (Test-WSLCommandExists "npx"))
+        $InstallationState.Foundry = [bool](Test-WSLCommandExists "forge")
+        $InstallationState.Noir = [bool](Test-WSLCommandExists "nargo")
+        $InstallationState.Circom = [bool](Test-WSLCommandExists "circom")
+        $InstallationState.Snarkjs = [bool]((Test-WSLCommandExists "snarkjs") -or (Test-WSLCommandExists "npx"))
+        
+        # CRITICAL FIX: Check starknet-devnet - cast result to explicit [bool]
+        # asdf global was renamed to asdf set -u in newer asdf versions; try both
+        try {
+            $devnetCheck = Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; asdf current starknet-devnet 2>&1" -Silent -IgnoreErrors
+            $devnetInstalled = ($devnetCheck -notmatch "No version" -and $devnetCheck -notmatch "no version" -and $devnetCheck -notmatch "not installed")
+            $InstallationState.StarknetDevnet = [bool]$devnetInstalled
+        }
+        catch {
+            $InstallationState.StarknetDevnet = [bool](Test-WSLCommandExists "starknet-devnet")
+        }
+        
+        # Check Python packages (RUN IN WSL)
+        try {
+            $pipList = Invoke-WSLCommand "pip3 list 2>&1" -Silent -IgnoreErrors
+            $InstallationState.StarknetPy = [bool]($pipList -match "starknet-py")
+        }
+        catch {
+            $InstallationState.StarknetPy = $false
+        }
+        
+        # Check npm packages (RUN IN WSL)
+        try {
+            $npmList = Invoke-WSLCommand "npm list -g --depth=0 2>&1" -Silent -IgnoreErrors
+            $InstallationState.StarknetJS = [bool]($npmList -match "starknet")
+        }
+        catch {
+            $InstallationState.StarknetJS = $false
+        }
+    }
+}
+
+#endregion
+
+#region Installation Functions
+
+function Install-WSL2 {
+    Write-Section "Installing WSL2"
+    
+    if ($InstallationState.WSL2) {
+        Write-Warning "WSL2 is already installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing WSL2..."
+    Write-Warning "This may require a system restart"
+    Write-Host ""
+    
+    if (!(Confirm-Action "Continue with WSL2 installation?")) {
+        return
+    }
+    
+    try {
+        # Enable WSL feature (WINDOWS OPERATION)
+        Write-Info "Enabling WSL feature..."
+        dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+        
+        # Enable Virtual Machine feature (WINDOWS OPERATION)
+        Write-Info "Enabling Virtual Machine Platform..."
+        dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+        
+        # Set WSL 2 as default (WINDOWS OPERATION)
+        Write-Info "Setting WSL 2 as default version..."
+        wsl --set-default-version 2
+        
+        Write-Success "WSL2 installation completed"
+        Write-Warning "A system restart is recommended"
+        Write-Host ""
+        
+        if (Confirm-Action "Restart now?") {
+            Restart-Computer
+        }
+    }
+    catch {
+        Write-Error "Failed to install WSL2: $_"
+        Write-Log "WSL2 installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Ubuntu {
+    Write-Section "Installing Ubuntu 22.04"
+    
+    if (!$InstallationState.WSL2) {
+        Write-Error "WSL2 must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    if ($InstallationState.Ubuntu) {
+        Write-Warning "Ubuntu 22.04 is already installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Ubuntu 22.04..."
+    Write-Host ""
+    
+    try {
+        # Install Ubuntu (WINDOWS OPERATION)
+        Write-Info "Downloading and installing Ubuntu 22.04..."
+        wsl --install -d Ubuntu-22.04
+        
+        Write-Success "Ubuntu 22.04 installed successfully"
+        Write-Info "Please complete the Ubuntu setup (username/password)"
+        Write-Host ""
+        
+        # Wait for user to complete setup
+        Write-Info "Press any key after completing Ubuntu setup..."
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        
+        # Initialize environment
+        Initialize-WSLEnvironment
+        
+        # Update Ubuntu (RUNS IN WSL)
+        Write-Info "Updating Ubuntu packages..."
+        Invoke-WSLCommand "sudo apt-get update" -Silent
+        Invoke-WSLCommand "sudo apt-get upgrade -y" -Silent
+        
+        Write-Success "Ubuntu setup completed"
+    }
+    catch {
+        Write-Error "Failed to install Ubuntu: $_"
+        Write-Log "Ubuntu installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Prerequisites {
+    Write-Section "Installing Prerequisites"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing essential packages..."
+    Write-Host ""
+    
+    try {
+        # Update package list
+        Write-Info "Updating package lists..."
+        Invoke-WSLCommand "sudo apt-get update -qq"
+        
+        # Install build essentials
+        Write-Info "Installing build essentials..."
+        Invoke-WSLCommand "sudo apt-get install -y build-essential curl git wget libssl-dev pkg-config"
+        
+        # Install libgmp for starknet.py
+        Write-Info "Installing libgmp (required for starknet.py)..."
+        Invoke-WSLCommand "sudo apt-get install -y libgmp3-dev" -IgnoreErrors
+        
+        # Install asdf version manager (still used as fallback)
+        Write-Info "Installing asdf version manager..."
+        Invoke-WSLCommand "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0" -IgnoreErrors
+        
+        # Add asdf to bash profile - guard against duplicates
+        Invoke-WSLCommand "grep -q 'asdf/asdf.sh' ~/.bashrc || echo '. $HOME/.asdf/asdf.sh' >> ~/.bashrc"
+        # Remove broken asdf lines from .profile if asdf not installed yet
+        Invoke-WSLCommand "sed -i '/asdf\/asdf\.sh/d' ~/.profile 2>/dev/null; true" -IgnoreErrors
+        Invoke-WSLCommand "grep -q 'asdf.bash' ~/.bashrc || echo '. `$HOME/.asdf/completions/asdf.bash' >> ~/.bashrc"
+        
+        Write-Success "Prerequisites installed successfully"
+    }
+    catch {
+        Write-Error "Failed to install prerequisites: $_"
+        Write-Log "Prerequisites installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Scarb {
+    Write-Section "Installing Scarb (Cairo Package Manager)"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    if ($InstallationState.Scarb) {
+        Write-Warning "Scarb is already installed"
+        $version = Invoke-WSLCommand "scarb --version" -Silent -IgnoreErrors
+        Write-Info "Current version: $version"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Scarb via starkup (2026 official method)..."
+    Write-Host ""
+    
+    try {
+        # 2026 METHOD: Use starkup - the official Starknet toolchain installer
+        # This installs Scarb + Starknet Foundry + Universal Sierra Compiler together
+        Write-Info "Downloading and running starkup installer..."
+        Invoke-WSLCommand "curl --proto '=https' --tlsv1.2 -sSf https://sh.starkup.sh | sh -s -- --yes"
+        
+        # Source the updated profile
+        Invoke-WSLCommand ". ~/.bashrc 2>/dev/null; . ~/.profile 2>/dev/null; true" -IgnoreErrors
+        
+        # Verify installation
+        $version = Invoke-WSLCommand "scarb --version" -Silent -IgnoreErrors
+        
+        Write-Success "Scarb installed successfully via starkup"
+        Write-ColorText "  Version: $version" $Colors.Info
+        Write-Info "Note: starkup also installs Starknet Foundry and devnet"
+    }
+    catch {
+        Write-Warning "starkup failed, trying asdf fallback..."
+        try {
+            Invoke-WSLCommand "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0" -IgnoreErrors
+            Invoke-WSLCommand "grep -q 'asdf/asdf.sh' ~/.bashrc || echo '. $HOME/.asdf/asdf.sh' >> ~/.bashrc"
+        # Remove broken asdf lines from .profile if asdf not installed yet
+        Invoke-WSLCommand "sed -i '/asdf\/asdf\.sh/d' ~/.profile 2>/dev/null; true" -IgnoreErrors
+            Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; asdf plugin add scarb && asdf install scarb latest && asdf set -u scarb latest" 
+            $version = Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; scarb --version" -Silent
+            Write-Success "Scarb installed via asdf fallback"
+            Write-ColorText "  Version: $version" $Colors.Info
+        }
+        catch {
+            Write-Error "Failed to install Scarb: $_"
+            Write-Log "Scarb installation failed: $_" -Level Error
+        }
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-StarknetFoundry {
+    Write-Section "Installing Starknet Foundry (snforge + sncast)"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    if ($InstallationState.StarknetFoundry) {
+        Write-Warning "Starknet Foundry is already installed"
+        $version = Invoke-WSLCommand "snforge --version" -Silent -IgnoreErrors
+        Write-Info "Current version: $version"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Starknet Foundry via starkup (2026 official method)..."
+    Write-Host ""
+    
+    try {
+        # 2026 METHOD: starkup installs both Scarb and Foundry together
+        Write-Info "Running starkup to install Foundry..."
+        Invoke-WSLCommand "curl --proto '=https' --tlsv1.2 -sSf https://sh.starkup.sh | sh -s -- --yes"
+        
+        Invoke-WSLCommand ". ~/.bashrc 2>/dev/null; . ~/.profile 2>/dev/null; true" -IgnoreErrors
+        
+        $snforgeVer = Invoke-WSLCommand "snforge --version" -Silent -IgnoreErrors
+        $sncastVer = Invoke-WSLCommand "sncast --version" -Silent -IgnoreErrors
+        
+        Write-Success "Starknet Foundry installed successfully"
+        Write-ColorText "  snforge: $snforgeVer" $Colors.Info
+        Write-ColorText "  sncast:  $sncastVer" $Colors.Info
+    }
+    catch {
+        Write-Warning "starkup failed, trying asdf fallback..."
+        try {
+            Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; asdf plugin add starknet-foundry && asdf install starknet-foundry latest && asdf set -u starknet-foundry latest"
+            $version = Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; snforge --version" -Silent
+            Write-Success "Starknet Foundry installed via asdf fallback"
+            Write-ColorText "  Version: $version" $Colors.Info
+        }
+        catch {
+            Write-Error "Failed to install Starknet Foundry: $_"
+            Write-Log "Starknet Foundry installation failed: $_" -Level Error
+        }
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-StarknetDevnet {
+    Write-Section "Installing Starknet Devnet (Local Testnet)"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    if ($InstallationState.StarknetDevnet) {
+        Write-Warning "Starknet Devnet is already installed"
+        $version = Invoke-WSLCommand "starknet-devnet --version" -Silent -IgnoreErrors
+        Write-Info "Current version: $version"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Starknet Devnet (Rust edition, v0.7.x)..."
+    Write-Host ""
+    
+    try {
+        # 2026: starkup installs devnet as part of the toolchain
+        Write-Info "Attempting starkup (installs devnet as part of toolchain)..."
+        Invoke-WSLCommand "curl --proto '=https' --tlsv1.2 -sSf https://sh.starkup.sh | sh -s -- --yes" -IgnoreErrors
+        
+        # Check if devnet was included
+        $devnetCheck = Invoke-WSLCommand "starknet-devnet --version 2>&1" -Silent -IgnoreErrors
+        if ($devnetCheck -and $devnetCheck -notmatch "not found" -and $devnetCheck -notmatch "No such") {
+            Write-Success "Starknet Devnet installed via starkup"
+            Write-ColorText "  Version: $devnetCheck" $Colors.Info
+        } else {
+            # Fallback: install via asdf plugin
+            Write-Info "Installing via asdf plugin..."
+            Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; asdf plugin add starknet-devnet && asdf install starknet-devnet latest && asdf set -u starknet-devnet latest"
+            $version = Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; starknet-devnet --version" -Silent
+            Write-Success "Starknet Devnet installed via asdf"
+            Write-ColorText "  Version: $version" $Colors.Info
+        }
+        
+        Write-Info "Run with: starknet-devnet --host 0.0.0.0 --port 5050"
+        Write-Info "JSON-RPC available at: http://127.0.0.1:5050/rpc"
+    }
+    catch {
+        Write-Error "Failed to install Starknet Devnet: $_"
+        Write-Log "Starknet Devnet installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Starkli {
+    Write-Section "Installing Starkli"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    if ($InstallationState.Starkli) {
+        Write-Warning "Starkli is already installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Starkli..."
+    Write-Host ""
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL, INSTALL TO WSL HOME
+        
+        # Install starkliup
+        Write-Info "Installing Starkliup..."
+        Invoke-WSLCommand "curl https://get.starkli.sh | sh"
+        
+        # Install starkli
+        Write-Info "Installing Starkli..."
+        Invoke-WSLCommand "~/.starkli/bin/starkliup"
+        
+        # Add to PATH in bashrc (WSL FILE) - guard against duplicates
+        Invoke-WSLCommand "grep -q '.starkli/bin' ~/.bashrc || echo 'export PATH=`$HOME/.starkli/bin:`$PATH' >> ~/.bashrc"
+        
+        # Verify installation
+        $version = Invoke-WSLCommand "~/.starkli/bin/starkli --version" -Silent
+        
+        Write-Success "Starkli installed successfully"
+        Write-ColorText "  Version: $version" $Colors.Info
+    }
+    catch {
+        Write-Error "Failed to install Starkli: $_"
+        Write-Log "Starkli installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-NodeJS {
+    Write-Section "Installing Node.js"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    if ($InstallationState.NodeJS) {
+        Write-Warning "Node.js is already installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Node.js via NVM..."
+    Write-Host ""
+    
+    try {
+        # Install NVM + Node.js LTS all in ONE bash call - NVM must be sourced in same shell it was installed
+        Write-Info "Installing NVM + Node.js LTS in one step..."
+        Invoke-WSLCommand 'bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && nvm install --lts && nvm use --lts && nvm alias default node"'
+
+        # Ensure NVM loads in future sessions - guard duplicates
+        Invoke-WSLCommand 'grep -q "NVM_DIR" ~/.bashrc || echo "export NVM_DIR=\"\$HOME/.nvm\"\n[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"" >> ~/.bashrc'
+
+        # Verify
+        $version = Invoke-WSLCommand 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; node --version' -Silent
+
+        Write-Success "Node.js installed successfully"
+        Write-ColorText "  Version: $version" $Colors.Info
+    }
+    catch {
+        Write-Error "Failed to install Node.js: $_"
+        Write-Log "Node.js installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-StarknetJS {
+    Write-Section "Installing Starknet.js"
+    
+    if (!$InstallationState.NodeJS) {
+        Write-Error "Node.js must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Starknet.js..."
+    Write-Host ""
+    
+    try {
+        # RUNS IN WSL
+        Write-Info "Installing Starknet.js package..."
+        Invoke-WSLCommand "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; npm install -g starknet"
+        
+        Write-Success "Starknet.js installed successfully"
+    }
+    catch {
+        Write-Error "Failed to install Starknet.js: $_"
+        Write-Log "Starknet.js installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Python3 {
+    Write-Section "Installing Python3"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Python3 and pip..."
+    Write-Host ""
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        
+        Write-Info "Installing Python3 packages..."
+        Invoke-WSLCommand "sudo apt-get install -y python3 python3-pip python3-venv"
+        
+        # Verify installation
+        $version = Invoke-WSLCommand "python3 --version" -Silent
+        
+        Write-Success "Python3 installed successfully"
+        Write-ColorText "  Version: $version" $Colors.Info
+    }
+    catch {
+        Write-Error "Failed to install Python3: $_"
+        Write-Log "Python3 installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-StarknetPy {
+    Write-Section "Installing Starknet.py"
+    
+    if (!$InstallationState.Python3) {
+        Write-Error "Python3 must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Starknet.py..."
+    Write-Host ""
+    
+    try {
+        # RUNS IN WSL
+        # Install required system library first (needed for fastecdsa/ecdsa)
+        Write-Info "Installing libgmp dependency..."
+        Invoke-WSLCommand "sudo apt-get install -y libgmp3-dev" -IgnoreErrors
+        
+        Write-Info "Installing Starknet.py package..."
+        Invoke-WSLCommand "pip3 install starknet-py"
+        
+        # Verify
+        $version = Invoke-WSLCommand "pip3 show starknet-py 2>&1 | grep Version" -Silent -IgnoreErrors
+        Write-Success "Starknet.py installed successfully"
+        Write-ColorText "  $version" $Colors.Info
+    }
+    catch {
+        Write-Error "Failed to install Starknet.py: $_"
+        Write-Log "Starknet.py installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Hardhat {
+    Write-Section "Installing Hardhat (Ethereum Dev Environment)"
+    
+    if (!$InstallationState.NodeJS) {
+        Write-Error "Node.js must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Hardhat and toolbox..."
+    Write-Host ""
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        
+        # Install Hardhat globally
+        Write-Info "Installing Hardhat globally..."
+        Invoke-WSLCommand "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; npm install -g hardhat"
+        
+        # Install common Hardhat plugins
+        Write-Info "Installing Hardhat toolbox..."
+        Invoke-WSLCommand "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; npm install -g @nomicfoundation/hardhat-toolbox"
+        
+        # Verify installation
+        $version = Invoke-WSLCommand "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; npx hardhat --version" -Silent
+        
+        Write-Success "Hardhat installed successfully"
+        Write-ColorText "  Version: $version" $Colors.Info
+        Write-Info "You can now use 'npx hardhat' to create and manage Ethereum projects"
+    }
+    catch {
+        Write-Error "Failed to install Hardhat: $_"
+        Write-Log "Hardhat installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Foundry {
+    Write-Section "Installing Foundry (Ethereum Toolkit)"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Foundry (forge, cast, anvil, chisel)..."
+    Write-Host ""
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        
+        # Install foundryup then run it - all in ONE shell call
+        Write-Info "Installing Foundryup and Foundry toolchain..."
+        Invoke-WSLCommand 'curl -L https://foundry.paradigm.xyz | bash && export PATH="$PATH:$HOME/.foundry/bin" && foundryup'
+
+        # Guard PATH in .bashrc
+        Invoke-WSLCommand 'grep -q ".foundry/bin" ~/.bashrc || echo "export PATH=\"\$PATH:\$HOME/.foundry/bin\"" >> ~/.bashrc'
+        
+        # Verify installation
+        $forgeVersion = Invoke-WSLCommand "~/.foundry/bin/forge --version" -Silent
+        $castVersion = Invoke-WSLCommand "~/.foundry/bin/cast --version" -Silent
+        
+        Write-Success "Foundry installed successfully"
+        Write-ColorText "  Forge: $forgeVersion" $Colors.Info
+        Write-ColorText "  Cast: $castVersion" $Colors.Info
+        Write-Info "Tools installed: forge, cast, anvil, chisel"
+    }
+    catch {
+        Write-Error "Failed to install Foundry: $_"
+        Write-Log "Foundry installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Noir {
+    Write-Section "Installing Noir (ZKP Language)"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Noir and Nargo..."
+    Write-Host ""
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        
+        # Install Noirup - correct current URL
+        Write-Info "Installing Noirup..."
+        Invoke-WSLCommand "curl -L https://raw.githubusercontent.com/noir-lang/noirup/refs/heads/main/install | bash"
+
+        # Run noirup to install nargo - all in one call so PATH is live
+        Write-Info "Installing Noir toolchain..."
+        Invoke-WSLCommand 'export NARGO_HOME="$HOME/.nargo"; export PATH="$PATH:$NARGO_HOME/bin"; $NARGO_HOME/bin/noirup'
+
+        # Guard PATH in .bashrc
+        Invoke-WSLCommand 'grep -q ".nargo/bin" ~/.bashrc || echo "export NARGO_HOME=\"\$HOME/.nargo\"\nexport PATH=\"\$PATH:\$NARGO_HOME/bin\"" >> ~/.bashrc'
+
+        # Verify
+        $version = Invoke-WSLCommand 'export NARGO_HOME="$HOME/.nargo"; export PATH="$PATH:$NARGO_HOME/bin"; nargo --version' -Silent
+        
+        Write-Success "Noir installed successfully"
+        Write-ColorText "  Version: $version" $Colors.Info
+        Write-Info "Nargo CLI ready for ZK proof development"
+    }
+    catch {
+        Write-Error "Failed to install Noir: $_"
+        Write-Log "Noir installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Circom {
+    Write-Section "Installing Circom & SnarkJS (ZKP Toolkit)"
+    
+    if (!$InstallationState.Rust) {
+        Write-Error "Rust must be installed first (run Install-Prerequisites)"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    if (!$InstallationState.NodeJS) {
+        Write-Error "Node.js must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Circom and SnarkJS..."
+    Write-Host ""
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        
+        # Install Circom from source
+        Write-Info "Cloning Circom repository..."
+        Invoke-WSLCommand "cd ~ && git clone https://github.com/iden3/circom.git" -IgnoreErrors
+        
+        Write-Info "Building Circom (this may take a few minutes)..."
+        Invoke-WSLCommand "cd ~/circom && cargo build --release"
+        
+        Write-Info "Installing Circom binary..."
+        Invoke-WSLCommand "cd ~/circom && cargo install --path circom"
+        
+        # Install SnarkJS via npm
+        Write-Info "Installing SnarkJS..."
+        Invoke-WSLCommand "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; npm install -g snarkjs"
+        
+        # Verify installations
+        $circomVersion = Invoke-WSLCommand "circom --version" -Silent
+        $snarkjsVersion = Invoke-WSLCommand "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; snarkjs --version" -Silent
+        
+        Write-Success "Circom & SnarkJS installed successfully"
+        Write-ColorText "  Circom: $circomVersion" $Colors.Info
+        Write-ColorText "  SnarkJS: $snarkjsVersion" $Colors.Info
+        Write-Info "Ready for zkSNARK circuit development"
+    }
+    catch {
+        Write-Error "Failed to install Circom/SnarkJS: $_"
+        Write-Log "Circom installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-Rust {
+    Write-Section "Installing Rust"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Rust via rustup..."
+    Write-Host ""
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        
+        # Install rustup
+        Write-Info "Installing Rust toolchain..."
+        Invoke-WSLCommand "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+        
+        # Source cargo env
+        Invoke-WSLCommand ". ~/.cargo/env"
+        
+        # Add to PATH - guard against duplicates
+        Invoke-WSLCommand "grep -q 'cargo/env' ~/.bashrc || echo 'source ~/.cargo/env' >> ~/.bashrc"
+        
+        # Verify installation
+        $version = Invoke-WSLCommand ". ~/.cargo/env && rustc --version" -Silent
+        
+        Write-Success "Rust installed successfully"
+        Write-ColorText "  Version: $version" $Colors.Info
+    }
+    catch {
+        Write-Error "Failed to install Rust: $_"
+        Write-Log "Rust installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-DojoEngine {
+    Write-Section "Installing Dojo Engine (2026 Gaming)"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu must be installed first"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    if ($InstallationState.Dojo) {
+        Write-Warning "Dojo Engine is already installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Installing Dojo Engine and tools..."
+    Write-Host ""
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        
+        # Official 2026 method: asdf-dojo plugin with full URL
+        Write-Info "Installing Dojo via asdf-dojo plugin (official 2026 method)..."
+        Invoke-WSLCommand ". ~/.asdf/asdf.sh 2>/dev/null; asdf plugin add dojo https://github.com/dojoengine/asdf-dojo.git 2>/dev/null; true" -IgnoreErrors
+
+        Write-Info "Installing latest Dojo toolchain (sozo, katana, torii)..."
+        Invoke-WSLCommand ". ~/.asdf/asdf.sh 2>/dev/null; asdf install dojo latest && asdf global dojo latest"
+
+        # Verify - asdf shims land in ~/.asdf/shims/
+        $sozo   = Invoke-WSLCommand ". ~/.asdf/asdf.sh 2>/dev/null; sozo --version 2>&1"   -Silent -IgnoreErrors
+        $katana = Invoke-WSLCommand ". ~/.asdf/asdf.sh 2>/dev/null; katana --version 2>&1" -Silent -IgnoreErrors
+        $torii  = Invoke-WSLCommand ". ~/.asdf/asdf.sh 2>/dev/null; torii --version 2>&1"  -Silent -IgnoreErrors
+        
+        Write-Success "Dojo Engine installed successfully"
+        Write-ColorText "  sozo:   $sozo"   $Colors.Info
+        Write-ColorText "  katana: $katana" $Colors.Info
+        Write-ColorText "  torii:  $torii"  $Colors.Info
+    }
+    catch {
+        Write-Error "Failed to install Dojo Engine: $_"
+        Write-Log "Dojo Engine installation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Install-AllTools {
+    Write-Section "Complete Installation - 2026 ULTIMATE"
+    
+    Write-Info "This will install the complete 2026 blockchain development arsenal:"
+    Write-Host ""
+    Write-ColorText "  🔷 StarkNet: " $Colors.Info -NoNewline
+    Write-ColorText "Scarb, Foundry (snforge/sncast), Devnet, Starkli" $Colors.Muted
+    Write-ColorText "  🎮 Gaming:   " $Colors.Info -NoNewline
+    Write-ColorText "Dojo Engine (Katana, Torii, Sozo)" $Colors.Muted
+    Write-ColorText "  ⚡ Ethereum: " $Colors.Info -NoNewline
+    Write-ColorText "Hardhat, Foundry (forge, cast, anvil)" $Colors.Muted
+    Write-ColorText "  🔐 ZKP:      " $Colors.Info -NoNewline
+    Write-ColorText "Noir (nargo), Circom & SnarkJS" $Colors.Muted
+    Write-ColorText "  🐍 SDKs:     " $Colors.Info -NoNewline
+    Write-ColorText "Starknet.js (Node.js), Starknet.py" $Colors.Muted
+    Write-Host ""
+    Write-ColorText "  Uses starkup (2026 official installer) for core tools" $Colors.Gold
+    Write-Host ""
+    
+    # MUST have WSL path configured before anything runs
+    if ([string]::IsNullOrWhiteSpace($Config.WSLDistro) -or [string]::IsNullOrWhiteSpace($Config.WSLTargetUser)) {
+        Set-MyWSLPath
+    }
+    if ([string]::IsNullOrWhiteSpace($Config.WSLDistro)) {
+        Write-Error "WSL path not configured. Cannot proceed with installation."
+        Start-Sleep -Seconds 3
+        return
+    }
+
+    if (!(Confirm-Action "Continue with complete installation?")) {
+        return
+    }
+    
+    $startTime = Get-Date
+    
+    # Phase 1: WSL Foundation
+    if (!$InstallationState.WSL2) { Install-WSL2 }
+    if (!$InstallationState.Ubuntu) { Install-Ubuntu }
+    Install-Prerequisites
+    Install-Rust
+    
+    # Phase 2: StarkNet Core (via starkup - installs Scarb + Foundry + Devnet together)
+    Install-Scarb         # starkup installs Scarb + Foundry + Devnet
+    Install-Starkli
+    
+    # Phase 3: SDKs
+    Install-NodeJS
+    Install-StarknetJS
+    Install-Python3
+    Install-StarknetPy
+    
+    # Phase 4: Gaming tools
+    Install-DojoEngine
+    
+    # Phase 5: Ethereum tools
+    Install-Hardhat
+    Install-Foundry
+    
+    # Phase 6: ZKP tools
+    Install-Noir
+    Install-Circom
+    
+    $endTime = Get-Date
+    $duration = $endTime - $startTime
+    
+    Write-Host ""
+    Write-Success "🏆 ULTIMATE COMPLETE INSTALLATION FINISHED!"
+    Write-ColorText "  Total time: $($duration.TotalMinutes.ToString('F2')) minutes" $Colors.Info
+    Write-Host ""
+    Write-ColorText "  You now have the complete 2026 blockchain development arsenal:" $Colors.Gold
+    Write-ColorText "  ✓ StarkNet (Cairo, L2 scaling, ZK-STARKs)" $Colors.Success
+    Write-ColorText "  ✓ Ethereum (Solidity, EVM, Hardhat, Foundry)" $Colors.Success
+    Write-ColorText "  ✓ Gaming (Dojo Engine, Katana sequencer)" $Colors.Success
+    Write-ColorText "  ✓ ZKP (Noir, Circom, SnarkJS)" $Colors.Success
+    Write-ColorText "  ✓ SDKs (Starknet.js, Starknet.py)" $Colors.Success
+    Write-Host ""
+    
+    Start-Sleep -Seconds 5
+}
+
+#endregion
+
+#region Development Functions
+
+function Start-DevnetNode {
+    Write-Section "Starting Starknet Devnet"
+    
+    if (!$InstallationState.StarknetDevnet) {
+        Write-Error "Starknet Devnet is not installed"
+        Write-Info "Install it with option [6]"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Starting Starknet Devnet node..."
+    Write-Host ""
+    
+    try {
+        # RUNS IN WSL - 2026 starknet-devnet RS syntax
+        Write-Success "Starknet Devnet is starting..."
+        Write-Info "RPC endpoint: http://127.0.0.1:5050/rpc"
+        Write-Info "Predeployed accounts available at startup"
+        Write-Info "Press Ctrl+C to stop"
+        Write-Host ""
+        
+        Invoke-WSLCommand ". ~/.asdf/asdf.sh 2>/dev/null; . ~/.bashrc 2>/dev/null; starknet-devnet --host 127.0.0.1 --port 5050"
+    }
+    catch {
+        Write-Error "Failed to start Devnet: $_"
+        Write-Log "Devnet start failed: $_" -Level Error
+    }
+}
+
+function Start-KatanaSequencer {
+    Write-Section "Starting Katana Sequencer"
+    
+    if (!$InstallationState.Katana) {
+        Write-Error "Katana is not installed (part of Dojo)"
+        Write-Info "Install Dojo Engine first (option G)"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Starting Katana sequencer..."
+    Write-Host ""
+    
+    try {
+        # RUNS IN WSL
+        Write-Success "Katana is starting..."
+        Write-Info "Default port: 5050"
+        Write-Info "Press Ctrl+C to stop"
+        Write-Host ""
+        
+        # Start Katana - installed via asdf, use shim
+        Invoke-WSLCommand ". ~/.asdf/asdf.sh 2>/dev/null; katana"
+    }
+    catch {
+        Write-Error "Failed to start Katana: $_"
+        Write-Log "Katana start failed: $_" -Level Error
+    }
+}
+
+function Create-StarknetProject {
+    Write-Section "Create New StarkNet Project"
+    
+    if (!$InstallationState.Scarb) {
+        Write-Error "Scarb is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project name: " $Colors.Prompt -NoNewline
+    $projectName = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectName)) {
+        Write-Warning "Project name cannot be empty"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    # Project will be created in WSL home directory
+    $wslProjectPath = "$($Config.WSLHomeDir)/starknet-projects/$projectName"
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        Write-Info "Creating project: $projectName"
+        
+        # Create project directory
+        Invoke-WSLCommand "mkdir -p $($Config.WSLHomeDir)/starknet-projects"
+        
+        # Create Scarb project
+        Invoke-WSLCommand "cd $($Config.WSLHomeDir)/starknet-projects && [ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; scarb new $projectName"
+        
+        Write-Success "Project created successfully"
+        Write-ColorText "  Location (WSL): $wslProjectPath" $Colors.Info
+        
+        # Convert to Windows path for display
+        $windowsPath = "\\wsl.localhost\$($Config.WSLDistro)$wslProjectPath"
+        Write-ColorText "  Location (Windows): $windowsPath" $Colors.Info
+        
+        Write-Host ""
+        Write-Info "To open in VS Code:"
+        Write-ColorText "  wsl code $wslProjectPath" $Colors.Highlight
+    }
+    catch {
+        Write-Error "Failed to create project: $_"
+        Write-Log "Project creation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 5
+}
+
+function Create-DojoProject {
+    Write-Section "Create New Dojo Game Project"
+    
+    if (!$InstallationState.Dojo) {
+        Write-Error "Dojo Engine is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Game project name: " $Colors.Prompt -NoNewline
+    $projectName = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectName)) {
+        Write-Warning "Project name cannot be empty"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    # Project will be created in WSL home directory
+    $wslProjectPath = "$($Config.WSLHomeDir)/starknet-projects/$projectName"
+    
+    try {
+        # ALL OPERATIONS RUN IN WSL
+        Write-Info "Creating Dojo game project: $projectName"
+        
+        # Create project directory
+        Invoke-WSLCommand "mkdir -p $($Config.WSLHomeDir)/starknet-projects"
+        
+        # Create Dojo project using Sozo - installed via asdf shim
+        Invoke-WSLCommand "cd $($Config.WSLHomeDir)/starknet-projects && . ~/.asdf/asdf.sh 2>/dev/null; sozo init $projectName"
+        
+        Write-Success "Dojo project created successfully"
+        Write-ColorText "  Location (WSL): $wslProjectPath" $Colors.Info
+        
+        # Convert to Windows path for display
+        $windowsPath = "\\wsl.localhost\$($Config.WSLDistro)$wslProjectPath"
+        Write-ColorText "  Location (Windows): $windowsPath" $Colors.Info
+        
+        Write-Host ""
+        Write-Info "To build and deploy:"
+        Write-ColorText "  cd $wslProjectPath" $Colors.Highlight
+        Write-ColorText "  sozo build" $Colors.Highlight
+        Write-ColorText "  katana  # Start local sequencer" $Colors.Highlight
+        Write-ColorText "  sozo migrate  # Deploy" $Colors.Highlight
+    }
+    catch {
+        Write-Error "Failed to create Dojo project: $_"
+        Write-Log "Dojo project creation failed: $_" -Level Error
+    }
+    
+    Start-Sleep -Seconds 5
+}
+
+function Open-WSLTerminal {
+    Write-Section "Opening WSL Terminal"
+    
+    if (!$InstallationState.Ubuntu) {
+        Write-Error "Ubuntu is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Info "Opening WSL terminal as user: $($Config.WSLTargetUser)..."
+    
+    # Try Windows Terminal first (better experience), fall back to wsl.exe
+    # Open terminal as distro default user - no -u flag needed
+    $wtPath = (Get-Command wt.exe -ErrorAction SilentlyContinue)?.Source
+    if ($wtPath) {
+        Start-Process "wt.exe" -ArgumentList "wsl.exe -d $($Config.WSLDistro)"
+    } else {
+        Start-Process wsl -ArgumentList "-d", $Config.WSLDistro
+    }
+    
+    Write-Success "Terminal opened"
+    Start-Sleep -Seconds 1
+}
+
+#endregion
+
+#region Contract Compilation & Interaction Functions
+
+function Compile-StarknetContract {
+    Write-Section "Compile StarkNet Contract"
+    
+    if (!$InstallationState.Scarb) {
+        Write-Error "Scarb is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        # Convert Windows path to WSL path if needed
+        if ($projectPath -match '^[A-Za-z]:\\') {
+            $projectPath = Get-WSLPath $projectPath
+        }
+        Write-Info "Compiling StarkNet contract with Scarb..."
+        Invoke-WSLCommand "cd `"$projectPath`" && . ~/.asdf/asdf.sh 2>/dev/null; scarb build"
+        
+        Write-Success "Contract compiled successfully!"
+        Write-Info "Artifacts saved in target/ directory"
+    }
+    catch {
+        Write-Error "Compilation failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Test-StarknetContract {
+    Write-Section "Test StarkNet Contract"
+    
+    if (!$InstallationState.StarknetFoundry) {
+        Write-Error "Starknet Foundry is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        Write-Info "Running tests with snforge..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "cd $projectPath && [ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; snforge test"
+        
+        Write-Success "Tests completed!"
+    }
+    catch {
+        Write-Error "Tests failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Deploy-StarknetContract {
+    Write-Section "Deploy StarkNet Contract"
+    
+    if (!$InstallationState.StarknetFoundry) {
+        Write-Error "Starknet Foundry is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Contract name: " $Colors.Prompt -NoNewline
+    $contractName = Read-Host
+    
+    Write-ColorText "  Network (devnet/testnet/mainnet): " $Colors.Prompt -NoNewline
+    $network = Read-Host
+
+    # Map network name to RPC URL
+    $networkUrl = switch ($network.ToLower()) {
+        "devnet"  { "http://127.0.0.1:5050" }
+        "testnet" { "https://free-rpc.nethermind.io/sepolia-juno" }
+        "mainnet" { "https://free-rpc.nethermind.io/mainnet-juno" }
+        default   { $network }  # Allow passing raw URL directly
+    }
+    
+    if ([string]::IsNullOrWhiteSpace($contractName)) {
+        Write-Warning "Contract name required"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    try {
+        Write-Info "Declaring contract with sncast..."
+        # RUNS IN WSL
+        $declareCmd = "cd . && [ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; sncast declare --contract-name $contractName"
+        if ($networkUrl) {
+            $declareCmd += " --url $networkUrl"
+        }
+        
+        Invoke-WSLCommand $declareCmd
+        
+        Write-Success "Contract declared successfully!"
+        Write-Info "Use the class hash to deploy your contract"
+    }
+    catch {
+        Write-Error "Deployment failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Compile-HardhatContract {
+    Write-Section "Compile Ethereum Contract (Hardhat)"
+    
+    if (!$InstallationState.Hardhat) {
+        Write-Error "Hardhat is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        Write-Info "Compiling Solidity contracts with Hardhat..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "cd $projectPath && [ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; npx hardhat compile"
+        
+        Write-Success "Contracts compiled successfully!"
+        Write-Info "Artifacts saved in artifacts/ directory"
+    }
+    catch {
+        Write-Error "Compilation failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Test-HardhatContract {
+    Write-Section "Test Ethereum Contract (Hardhat)"
+    
+    if (!$InstallationState.Hardhat) {
+        Write-Error "Hardhat is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        Write-Info "Running Hardhat tests..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "cd $projectPath && [ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; npx hardhat test"
+        
+        Write-Success "Tests completed!"
+    }
+    catch {
+        Write-Error "Tests failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Deploy-HardhatContract {
+    Write-Section "Deploy Ethereum Contract (Hardhat)"
+    
+    if (!$InstallationState.Hardhat) {
+        Write-Error "Hardhat is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Deployment script (e.g., scripts/deploy.js): " $Colors.Prompt -NoNewline
+    $scriptPath = Read-Host
+    
+    Write-ColorText "  Network (localhost/sepolia/mainnet): " $Colors.Prompt -NoNewline
+    $network = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($scriptPath)) {
+        Write-Warning "Script path required"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    try {
+        Write-Info "Deploying contract via Hardhat..."
+        # RUNS IN WSL
+        $deployCmd = "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; npx hardhat run $scriptPath"
+        if ($network) {
+            $deployCmd += " --network $network"
+        }
+        
+        Invoke-WSLCommand $deployCmd
+        
+        Write-Success "Contract deployed successfully!"
+    }
+    catch {
+        Write-Error "Deployment failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Compile-FoundryContract {
+    Write-Section "Compile Ethereum Contract (Foundry)"
+    
+    if (!$InstallationState.Foundry) {
+        Write-Error "Foundry is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        Write-Info "Compiling with Forge..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "cd $projectPath && ~/.foundry/bin/forge build"
+        
+        Write-Success "Contracts compiled successfully!"
+        Write-Info "Artifacts saved in out/ directory"
+    }
+    catch {
+        Write-Error "Compilation failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Test-FoundryContract {
+    Write-Section "Test Ethereum Contract (Foundry)"
+    
+    if (!$InstallationState.Foundry) {
+        Write-Error "Foundry is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        Write-Info "Running Forge tests..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "cd $projectPath && ~/.foundry/bin/forge test -vv"
+        
+        Write-Success "Tests completed!"
+    }
+    catch {
+        Write-Error "Tests failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Compile-NoirCircuit {
+    Write-Section "Compile Noir Circuit"
+    
+    if (!$InstallationState.Noir) {
+        Write-Error "Noir is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        Write-Info "Compiling Noir circuit with Nargo..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "cd $projectPath && ~/.nargo/bin/nargo compile"
+        
+        Write-Success "Circuit compiled successfully!"
+        Write-Info "Artifacts saved in target/ directory"
+    }
+    catch {
+        Write-Error "Compilation failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Prove-NoirCircuit {
+    Write-Section "Generate Noir Proof"
+    
+    if (!$InstallationState.Noir) {
+        Write-Error "Noir is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        Write-Info "Generating proof with Nargo..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "cd $projectPath && ~/.nargo/bin/nargo prove"
+        
+        Write-Success "Proof generated successfully!"
+        Write-Info "Proof saved in proofs/ directory"
+    }
+    catch {
+        Write-Error "Proof generation failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Verify-NoirProof {
+    Write-Section "Verify Noir Proof"
+    
+    if (!$InstallationState.Noir) {
+        Write-Error "Noir is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Project directory (or '.' for current): " $Colors.Prompt -NoNewline
+    $projectPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($projectPath)) {
+        $projectPath = "."
+    }
+    
+    try {
+        Write-Info "Verifying proof with Nargo..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "cd $projectPath && ~/.nargo/bin/nargo verify"
+        
+        Write-Success "Proof verified successfully!"
+    }
+    catch {
+        Write-Error "Proof verification failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Compile-CircomCircuit {
+    Write-Section "Compile Circom Circuit"
+    
+    if (!$InstallationState.Circom) {
+        Write-Error "Circom is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  Circuit file path (e.g., circuit.circom): " $Colors.Prompt -NoNewline
+    $circuitPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($circuitPath)) {
+        Write-Warning "Circuit file required"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    try {
+        Write-Info "Compiling Circom circuit..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "circom $circuitPath --r1cs --wasm --sym"
+        
+        Write-Success "Circuit compiled successfully!"
+        Write-Info "Generated: .r1cs, .wasm, and .sym files"
+    }
+    catch {
+        Write-Error "Compilation failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Prove-CircomCircuit {
+    Write-Section "Generate Circom/SnarkJS Proof"
+    
+    if (!$InstallationState.Snarkjs) {
+        Write-Error "SnarkJS is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  .zkey file path: " $Colors.Prompt -NoNewline
+    $zkeyPath = Read-Host
+    
+    Write-ColorText "  witness.wtns file path: " $Colors.Prompt -NoNewline
+    $witnessPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($zkeyPath) -or [string]::IsNullOrWhiteSpace($witnessPath)) {
+        Write-Warning "Both zkey and witness files required"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    try {
+        Write-Info "Generating proof with SnarkJS..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; snarkjs groth16 prove $zkeyPath $witnessPath proof.json public.json"
+        
+        Write-Success "Proof generated successfully!"
+        Write-Info "Files created: proof.json, public.json"
+    }
+    catch {
+        Write-Error "Proof generation failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+function Verify-CircomProof {
+    Write-Section "Verify Circom/SnarkJS Proof"
+    
+    if (!$InstallationState.Snarkjs) {
+        Write-Error "SnarkJS is not installed"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    Write-Host ""
+    Write-ColorText "  verification_key.json path: " $Colors.Prompt -NoNewline
+    $vkeyPath = Read-Host
+    
+    Write-ColorText "  proof.json path: " $Colors.Prompt -NoNewline
+    $proofPath = Read-Host
+    
+    Write-ColorText "  public.json path: " $Colors.Prompt -NoNewline
+    $publicPath = Read-Host
+    
+    if ([string]::IsNullOrWhiteSpace($vkeyPath) -or [string]::IsNullOrWhiteSpace($proofPath)) {
+        Write-Warning "Verification key and proof files required"
+        Start-Sleep -Seconds 2
+        return
+    }
+    
+    try {
+        Write-Info "Verifying proof with SnarkJS..."
+        # RUNS IN WSL
+        Invoke-WSLCommand "[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; snarkjs groth16 verify $vkeyPath $publicPath $proofPath"
+        
+        Write-Success "Proof verification completed! Check output above."
+    }
+    catch {
+        Write-Error "Proof verification failed: $_"
+    }
+    
+    Start-Sleep -Seconds 3
+}
+
+#endregion
+
+#region System Status & Information
+
+function Show-SystemStatus {
+    Write-Section "System Status"
+    
+    Write-Host ""
+    Write-ColorText "  ENVIRONMENT STATUS" $Colors.Primary
+    Write-Host "  " + ("-" * 58) -ForegroundColor $Colors.Muted
+    
+    # WSL Status (WINDOWS CHECK)
+    $wslStatus = if ($InstallationState.WSL2) { "Installed" } else { "Not Installed" }
+    $wslColor = if ($InstallationState.WSL2) { $Colors.Success } else { $Colors.Error }
+    Write-Host "  WSL2:               " -NoNewline -ForegroundColor $Colors.Info
+    Write-ColorText $wslStatus $wslColor
+    
+    # Ubuntu Status (WINDOWS CHECK)
+    $ubuntuStatus = if ($InstallationState.Ubuntu) { "Installed" } else { "Not Installed" }
+    $ubuntuColor = if ($InstallationState.Ubuntu) { $Colors.Success } else { $Colors.Error }
+    Write-Host "  Ubuntu 22.04:       " -NoNewline -ForegroundColor $Colors.Info
+    Write-ColorText $ubuntuStatus $ubuntuColor
+    
+    if ($InstallationState.Ubuntu) {
+        Write-Host ""
+        Write-ColorText "  STARKNET TOOLS" $Colors.Primary
+        Write-Host "  " + ("-" * 58) -ForegroundColor $Colors.Muted
+        
+        # Check each tool and get version (ALL RUN IN WSL)
+        $tools = @(
+            @{Name="Scarb"; Installed=$InstallationState.Scarb; Command="[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; scarb --version"},
+            @{Name="Starknet Foundry"; Installed=$InstallationState.StarknetFoundry; Command="[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; snforge --version"},
+            @{Name="Starknet Devnet"; Installed=$InstallationState.StarknetDevnet; Command="[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; starknet-devnet --version"},
+            @{Name="Starkli"; Installed=$InstallationState.Starkli; Command="~/.starkli/bin/starkli --version"},
+            @{Name="Node.js"; Installed=$InstallationState.NodeJS; Command="[ -f ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh 2>/dev/null; node --version"},
+            @{Name="Python3"; Installed=$InstallationState.Python3; Command="python3 --version"}
+        )
+        
+        foreach ($tool in $tools) {
+            $status = if ($tool.Installed) {
+                try {
+                    $version = Invoke-WSLCommand $tool.Command -Silent -IgnoreErrors
+                    if ($version) { $version.Trim() } else { "Installed" }
+                }
+                catch {
+                    "Installed"
+                }
+            } else {
+                "Not Installed"
+            }
+            
+            $color = if ($tool.Installed) { $Colors.Success } else { $Colors.Error }
+            $padding = " " * (20 - $tool.Name.Length)
+            Write-Host "  $($tool.Name):$padding" -NoNewline -ForegroundColor $Colors.Info
+            Write-ColorText $status $color
+        }
+        
+        # 2026 Gaming Tools
+        Write-Host ""
+        Write-ColorText "  2026 GAMING TOOLS" $Colors.Gold
+        Write-Host "  " + ("-" * 58) -ForegroundColor $Colors.Muted
+        
+        $gamingTools = @(
+            @{Name="Dojo Engine"; Installed=$InstallationState.Dojo; Command=". ~/.asdf/asdf.sh 2>/dev/null; sozo --version"},
+            @{Name="Katana Sequencer"; Installed=$InstallationState.Katana; Command=". ~/.asdf/asdf.sh 2>/dev/null; katana --version"},
+            @{Name="Torii Indexer"; Installed=$InstallationState.Torii; Command=". ~/.asdf/asdf.sh 2>/dev/null; torii --version"},
+            @{Name="Sozo CLI"; Installed=$InstallationState.Sozo; Command=". ~/.asdf/asdf.sh 2>/dev/null; sozo --version"}
+        )
+        
+        foreach ($tool in $gamingTools) {
+            $status = if ($tool.Installed) {
+                try {
+                    $version = Invoke-WSLCommand $tool.Command -Silent -IgnoreErrors
+                    if ($version) { $version.Trim() } else { "Installed" }
+                }
+                catch {
+                    "Installed"
+                }
+            } else {
+                "Not Installed"
+            }
+            
+            $color = if ($tool.Installed) { $Colors.Success } else { $Colors.Error }
+            $padding = " " * (20 - $tool.Name.Length)
+            Write-Host "  $($tool.Name):$padding" -NoNewline -ForegroundColor $Colors.Info
+            Write-ColorText $status $color
+        }
+        
+        # WSL Info
+        Write-Host ""
+        Write-ColorText "  WSL INFORMATION" $Colors.Primary
+        Write-Host "  " + ("-" * 58) -ForegroundColor $Colors.Muted
+        
+        Write-Host "  Username:           " -NoNewline -ForegroundColor $Colors.Info
+        Write-ColorText $Config.WSLUsername $Colors.Success
+        
+        Write-Host "  Home Directory:     " -NoNewline -ForegroundColor $Colors.Info
+        Write-ColorText $Config.WSLHomeDir $Colors.Success
+        
+        # Get WSL disk usage (RUNS IN WSL)
+        try {
+            $diskInfo = Invoke-WSLCommand "df -h ~ | tail -1 | awk '{print `$2, `$3, `$5}'" -Silent
+            $diskParts = $diskInfo -split '\s+'
+            if ($diskParts.Count -ge 3) {
+                Write-Host "  Disk Total:         " -NoNewline -ForegroundColor $Colors.Info
+                Write-ColorText $diskParts[0] $Colors.Success
+                
+                Write-Host "  Disk Used:          " -NoNewline -ForegroundColor $Colors.Info
+                Write-ColorText $diskParts[1] $Colors.Success
+                
+                Write-Host "  Disk Usage:         " -NoNewline -ForegroundColor $Colors.Info
+                Write-ColorText $diskParts[2] $Colors.Success
+            }
+        }
+        catch {
+            # Silently fail if disk info can't be retrieved
+        }
+    }
+    
+    # Internet connection (WINDOWS CHECK)
+    Write-Host ""
+    Write-ColorText "  NETWORK STATUS" $Colors.Primary
+    Write-Host "  " + ("-" * 58) -ForegroundColor $Colors.Muted
+    
+    $internetStatus = if (Test-InternetConnection) { "Connected" } else { "Disconnected" }
+    $internetColor = if (Test-InternetConnection) { $Colors.Success } else { $Colors.Error }
+    Write-Host "  Internet:           " -NoNewline -ForegroundColor $Colors.Info
+    Write-ColorText $internetStatus $internetColor
+    
+    Write-Host ""
+    Write-Info "Press any key to return to main menu..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
+
+function Show-Documentation {
+    Write-Section "Documentation & Resources"
+    
+    $docs = @(
+        @{ Title = "StarkNet Official Docs"; URL = "https://docs.starknet.io" },
+        @{ Title = "Cairo Book"; URL = "https://book.cairo-lang.org" },
+        @{ Title = "Scarb Documentation"; URL = "https://docs.swmansion.com/scarb" },
+        @{ Title = "Starknet Foundry"; URL = "https://foundry-rs.github.io/starknet-foundry" },
+        @{ Title = "Starknet.js Docs"; URL = "https://www.starknetjs.com" },
+        @{ Title = "Starknet.py Docs"; URL = "https://starknetpy.rtfd.io" },
+        @{ Title = "Dojo Engine Docs"; URL = "https://book.dojoengine.org" }
+    )
+    
+    Write-Host ""
+    foreach ($doc in $docs) {
+        Write-ColorText "  $($Symbols.Arrow) " $Colors.Primary -NoNewline
+        Write-ColorText "$($doc.Title): " $Colors.Info -NoNewline
+        Write-ColorText $doc.URL $Colors.Highlight
+    }
+    Write-Host ""
+    
+    Write-Info "Press any key to return to main menu..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
+
+function Uninstall-Tool {
+    Write-Section "Uninstall Tool"
+    
+    Write-Host ""
+    Write-Warning "Select tool to uninstall:"
+    Write-Host ""
+    Write-MenuOption "1" "Scarb" "" $InstallationState.Scarb
+    Write-MenuOption "2" "Starknet Foundry" "" $InstallationState.StarknetFoundry
+    Write-MenuOption "3" "Starknet Devnet" "" $InstallationState.StarknetDevnet
+    Write-MenuOption "4" "Starkli" "" $InstallationState.Starkli
+    Write-MenuOption "5" "Dojo Engine" "" $InstallationState.Dojo
+    Write-MenuOption "6" "ALL Tools (keep WSL/Ubuntu)" "" $false
+    Write-MenuOption "0" "Cancel" "" $false
+    Write-Host ""
+    
+    Write-ColorText "  Select option: " $Colors.Prompt -NoNewline
+    $choice = Read-Host
+    
+    switch ($choice) {
+        "1" {
+            if (Confirm-Action "Uninstall Scarb?") {
+                # RUNS IN WSL
+                Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; asdf uninstall scarb" -Silent -IgnoreErrors
+                Write-Success "Scarb uninstalled"
+            }
+        }
+        "2" {
+            if (Confirm-Action "Uninstall Starknet Foundry?") {
+                # RUNS IN WSL
+                Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; asdf uninstall starknet-foundry" -Silent -IgnoreErrors
+                Write-Success "Starknet Foundry uninstalled"
+            }
+        }
+        "3" {
+            if (Confirm-Action "Uninstall Starknet Devnet?") {
+                # RUNS IN WSL
+                Invoke-WSLCommand "[ -f ~/.asdf/asdf.sh ] && . ~/.asdf/asdf.sh 2>/dev/null; asdf uninstall starknet-devnet" -Silent -IgnoreErrors
+                Write-Success "Starknet Devnet uninstalled"
+            }
+        }
+        "4" {
+            if (Confirm-Action "Uninstall Starkli?") {
+                # RUNS IN WSL - remove from WSL home
+                Invoke-WSLCommand "rm -rf ~/.starkli" -Silent -IgnoreErrors
+                Write-Success "Starkli uninstalled"
+            }
+        }
+        "5" {
+            if (Confirm-Action "Uninstall Dojo Engine?") {
+                # RUNS IN WSL - remove from WSL home
+                Invoke-WSLCommand "rm -rf ~/.dojo" -Silent -IgnoreErrors
+                Write-Success "Dojo Engine uninstalled"
+            }
+        }
+        "6" {
+            if (Confirm-Action "Uninstall ALL StarkNet tools (WSL/Ubuntu will remain)?") {
+                # RUNS IN WSL - remove all tool directories from WSL home
+                Invoke-WSLCommand "rm -rf ~/.asdf ~/.starkli ~/.dojo ~/.nvm" -Silent -IgnoreErrors
+                Write-Success "All tools uninstalled"
+            }
+        }
+    }
+    
+    Start-Sleep -Seconds 2
+}
+
+#endregion
+
+#region Main Menu
+
+function Show-MainMenu {
+    Update-InstallationState
+    Show-Banner
+    
+    # Dynamic centering based on terminal width
+    $termWidth = $Host.UI.RawUI.WindowSize.Width
+    if ($termWidth -lt 80) { $termWidth = 80 }
+    $menuWidth = 66  # width of the box including borders
+    $indent = " " * [math]::Max(0, [math]::Floor(($termWidth - $menuWidth) / 2))
+    
+    Write-ColorText "${indent}╔════════════════════════════════════════════════════════════╗" $Colors.Secondary
+    Write-ColorText "${indent}║                      MAIN MENU                             ║" $Colors.Primary
+    Write-ColorText "${indent}╠════════════════════════════════════════════════════════════╣" $Colors.Secondary
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  📦 INSTALLATION                                           ║" $Colors.Info
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "1" "Install WSL2" "" ([bool]$InstallationState.WSL2)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "2" "Install Ubuntu 22.04" "" ([bool]$InstallationState.Ubuntu)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "3" "Install Prerequisites + Rust" "" ([bool]$InstallationState.Rust)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "4" "Install Scarb" "" ([bool]$InstallationState.Scarb)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "5" "Install Starknet Foundry" "" ([bool]$InstallationState.StarknetFoundry)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "6" "Install Starknet Devnet" "" ([bool]$InstallationState.StarknetDevnet)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "7" "Install Starkli" "" ([bool]$InstallationState.Starkli)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "8" "Install Node.js & Starknet.js" "" ([bool]($InstallationState.NodeJS -and $InstallationState.StarknetJS))
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "9" "Install Python3 & Starknet.py" "" ([bool]($InstallationState.Python3 -and $InstallationState.StarknetPy))
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  🎮 GAMING TOOLS                                           ║" $Colors.Gold
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "G" "Install Dojo Engine (Gaming)" "🎮" ([bool]$InstallationState.Dojo)
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  ⚡ EVM & ETHEREUM TOOLS                                    ║" $Colors.Highlight
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "H" "Install Hardhat" "⚙" ([bool]$InstallationState.Hardhat)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "F" "Install Foundry (forge/cast)" "🔨" ([bool]$InstallationState.Foundry)
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  🔐 ZKP TOOLS (Zero-Knowledge Proofs)                      ║" $Colors.Purple
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "N" "Install Noir (nargo)" "🌑" ([bool]$InstallationState.Noir)
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "C" "Install Circom & SnarkJS" "⭕" ([bool]$InstallationState.Circom)
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "A" "Install ALL Tools (Complete Setup)" "🚀" $false
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  🔧 COMPILE & BUILD                                        ║" $Colors.Info
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "CS" "Compile StarkNet Contract" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "CH" "Compile Hardhat Contract" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "CF" "Compile Foundry Contract" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "CN" "Compile Noir Circuit" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "CC" "Compile Circom Circuit" "" $false
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  ✅ TEST                                                   ║" $Colors.Success
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "TS" "Test StarkNet Contract" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "TH" "Test Hardhat Contract" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "TF" "Test Foundry Contract" "" $false
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  🚀 DEPLOY & PROVE                                         ║" $Colors.Gold
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "DS" "Deploy StarkNet Contract" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "DH" "Deploy Hardhat Contract" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "PN" "Prove Noir Circuit" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "VN" "Verify Noir Proof" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "PC" "Prove Circom Circuit" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "VC" "Verify Circom Proof" "" $false
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  💻 DEVELOPMENT                                            ║" $Colors.Info
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "D" "Start Devnet Node" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "K" "Start Katana Sequencer" "⚡" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "P" "Create New Project" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "J" "Create Dojo Game Project" "🎮" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "W" "Open WSL Terminal" "" $false
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}║  ⚙ SYSTEM                                                  ║" $Colors.Info
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "S" "Show System Status" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "U" "Uninstall Tool" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "?" "Documentation & Help" "" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "X" "Set My WSL Path (run this first!)" "📁" $false
+    Write-Host "${indent}║" -NoNewline -ForegroundColor $Colors.Secondary
+    Write-MenuOption "Q" "Quit" "" $false
+    Write-ColorText "${indent}║                                                            ║" $Colors.Secondary
+    Write-ColorText "${indent}╚════════════════════════════════════════════════════════════╝" $Colors.Secondary
+    Write-Host ""
+    
+    Write-Host "${indent}  Select option: " -NoNewline -ForegroundColor $Colors.Prompt
+    $choice = Read-Host
+    
+    return $choice.ToUpper()
+}
+
+#endregion
+
+#region Main Program
+
+function Start-StarkNetDevKit {
+    # Check administrator (WINDOWS CHECK)
+    if (!(Test-Administrator)) {
+        Write-Error "This script must be run as Administrator!"
+        Write-Info "Right-click PowerShell and select 'Run as Administrator'"
+        Start-Sleep -Seconds 5
+        exit
+    }
+    
+    # Create Windows directories (WINDOWS OPERATIONS)
+    if (!(Test-Path $Config.StarkNetDir)) {
+        New-Item -ItemType Directory -Path $Config.StarkNetDir -Force | Out-Null
+    }
+    if (!(Test-Path $Config.CacheDir)) {
+        New-Item -ItemType Directory -Path $Config.CacheDir -Force | Out-Null
+    }
+    if (!(Test-Path $Config.BackupDir)) {
+        New-Item -ItemType Directory -Path $Config.BackupDir -Force | Out-Null
+    }
+    if (!(Test-Path $Config.ProjectsDir)) {
+        New-Item -ItemType Directory -Path $Config.ProjectsDir -Force | Out-Null
+    }
+    
+    # Load config (WINDOWS OPERATION)
+    Load-Config
+    
+    # Run Set-MyWSLPath on first launch if not configured
+    if ([string]::IsNullOrWhiteSpace($Config.WSLTargetUser) -or [string]::IsNullOrWhiteSpace($Config.WSLDistro)) {
+        Set-MyWSLPath
+    }
+    
+    # ASK FOR WSL PATH FIRST - visible to user before anything else runs
+    if ([string]::IsNullOrWhiteSpace($Config.WSLTargetUser) -or [string]::IsNullOrWhiteSpace($Config.WSLDistro)) {
+        Clear-Host
+        Write-Host ""
+        Write-Host "  ================================================================" -ForegroundColor Yellow
+        Write-Host "  FIRST TIME SETUP - ENTER YOUR WSL PATH" -ForegroundColor Yellow
+        Write-Host "  Open Windows Explorer, navigate to your Linux home folder," -ForegroundColor White
+        Write-Host "  then copy the path from the address bar at the top." -ForegroundColor White
+        Write-Host "  It will look like:" -ForegroundColor White
+        Write-Host "  \\wsl.localhost\Ubuntu-22.04\home\otr1307" -ForegroundColor Cyan
+        Write-Host "  ================================================================" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  Paste your WSL path here: " -ForegroundColor Cyan -NoNewline
+        $inputPath = (Read-Host).Trim()
+        
+        $inputPath = $inputPath.TrimStart('\')
+        $parts = $inputPath -split '[\\]' | Where-Object { $_ -ne "" }
+        
+        if ($parts.Count -ge 4) {
+            $Config.WSLDistro     = $parts[1]
+            $Config.WSLTargetUser = $parts[3]
+        } elseif ($parts.Count -ge 3) {
+            $Config.WSLDistro     = $parts[0]
+            $Config.WSLTargetUser = $parts[2]
+        } else {
+            Write-Host "  Distro name (e.g. Ubuntu-22.04): " -ForegroundColor Cyan -NoNewline
+            $Config.WSLDistro = (Read-Host).Trim()
+            Write-Host "  Your username (e.g. otr1307): " -ForegroundColor Cyan -NoNewline
+            $Config.WSLTargetUser = (Read-Host).Trim()
+        }
+        
+        $Config.WSLUsername = $Config.WSLTargetUser
+        $Config.WSLHomeDir  = "/home/$($Config.WSLTargetUser)"
+        
+        Write-Host ""
+        Write-Host "  Distro : $($Config.WSLDistro)" -ForegroundColor Green
+        Write-Host "  User   : $($Config.WSLTargetUser)" -ForegroundColor Green
+        Write-Host "  Home   : $($Config.WSLHomeDir)" -ForegroundColor Green
+        Write-Host ""
+        
+        Save-Config
+        Start-Sleep -Seconds 2
+    }
+    
+    # Initial state check
+    Update-InstallationState
+    
+    # Main loop
+    $running = $true
+    while ($running) {
+        $choice = Show-MainMenu
+        
+        switch ($choice) {
+            "1" { Install-WSL2 }
+            "2" { Install-Ubuntu }
+            "3" { Install-Prerequisites; Install-Rust }
+            "4" { Install-Scarb }
+            "5" { Install-StarknetFoundry }
+            "6" { Install-StarknetDevnet }
+            "7" { Install-Starkli }
+            "8" { Install-NodeJS; Install-StarknetJS }
+            "9" { Install-Python3; Install-StarknetPy }
+            "G" { Install-DojoEngine }
+            "H" { Install-Hardhat }
+            "F" { Install-Foundry }
+            "N" { Install-Noir }
+            "C" { Install-Circom }
+            "A" { Install-AllTools }
+            # Compilation
+            "CS" { Compile-StarknetContract }
+            "CH" { Compile-HardhatContract }
+            "CF" { Compile-FoundryContract }
+            "CN" { Compile-NoirCircuit }
+            "CC" { Compile-CircomCircuit }
+            # Testing
+            "TS" { Test-StarknetContract }
+            "TH" { Test-HardhatContract }
+            "TF" { Test-FoundryContract }
+            # Deploy & Prove
+            "DS" { Deploy-StarknetContract }
+            "DH" { Deploy-HardhatContract }
+            "PN" { Prove-NoirCircuit }
+            "VN" { Verify-NoirProof }
+            "PC" { Prove-CircomCircuit }
+            "VC" { Verify-CircomProof }
+            # Development
+            "D" { Start-DevnetNode }
+            "K" { Start-KatanaSequencer }
+            "P" { Create-StarknetProject }
+            "J" { Create-DojoProject }
+            "W" { Open-WSLTerminal }
+            # System
+            "S" { Show-SystemStatus }
+            "U" { Uninstall-Tool }
+            "?" { Show-Documentation }
+            "X" { Set-MyWSLPath }
+            "Q" {
+                Show-Banner
+                Write-ColorText "  Thank you for using StarkNet DevKit ULTIMATE!" $Colors.Primary
+                Write-ColorText "  Happy building on StarkNet, Ethereum, and ZK! 🚀" $Colors.Success
+                Write-Host ""
+                Start-Sleep -Seconds 2
+                $running = $false
+            }
+            default {
+                Write-Warning "Invalid option. Please try again."
+                Start-Sleep -Seconds 1
+            }
+        }
+        
+        Update-InstallationState
+        Save-Config
+    }
+}
+
+# Start the application
+Start-StarkNetDevKit
+
+#endregion
