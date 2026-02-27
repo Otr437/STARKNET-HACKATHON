@@ -1,0 +1,11 @@
+# Exclude unnecessary files from the Docker build context
+
+node_modules/
+.git/
+.env
+logs/
+dist/
+*.log
+*.tmp
+*.bak
+*.cache
