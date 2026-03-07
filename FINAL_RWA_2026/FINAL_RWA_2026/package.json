@@ -1,0 +1,33 @@
+{
+  "name": "starknet-rwa-oracle-publisher",
+  "version": "1.0.0",
+  "description": "Off-chain oracle publisher: fetches US BLS CPI and FRED rates, pushes to Starknet InflationOracle",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "dry-run": "ts-node index.ts dry-run",
+    "once": "ts-node index.ts once",
+    "test:connections": "node scripts/test-connections.js",
+    "build": "tsc",
+    "build:contracts": "./scripts/build.sh",
+    "extract:abis": "node scripts/extract-abis.js",
+    "build:all": "npm run build:contracts && npm run extract:abis && npm run build",
+    "serve": "node dist/index.ts",
+    "deploy:oracle": "ts-node scripts/deploy_oracle.ts",
+    "deploy:factory": "ts-node scripts/deploy_factory.ts",
+    "deploy:all": "npm run deploy:oracle && npm run deploy:factory",
+    "deploy:real-assets": "ts-node scripts/deploy_real_assets.ts",
+    "create:rwa": "ts-node scripts/create_rwa.ts",
+    "full-deploy": "npm run build:all && npm run deploy:all && npm run deploy:real-assets"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "starknet": "^6.11.0",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
