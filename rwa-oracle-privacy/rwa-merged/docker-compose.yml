@@ -1,0 +1,120 @@
+# docker-compose.yml — RWA Oracle Production
+# All services depend on postgres being healthy before starting.
+
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-rwa_oracle}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB:       ${POSTGRES_DB:-rwa_oracle}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rwa_oracle} -d ${POSTGRES_DB:-rwa_oracle}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Run migrations and seed before starting services
+  migrate:
+    build: { context: ., target: production }
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rwa_oracle}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-rwa_oracle}
+    command: ["sh", "-c", "npx prisma migrate deploy && npx ts-node --transpile-only prisma/seed.ts || true"]
+    restart: "no"
+
+  admin-api:
+    build: { context: ., target: production }
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV:           production
+      DATABASE_URL:       postgresql://${POSTGRES_USER:-rwa_oracle}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-rwa_oracle}
+      ADMIN_PORT:         4000
+      JWT_ACCESS_SECRET:  ${JWT_ACCESS_SECRET:?required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?required}
+      CORS_ORIGINS:       ${CORS_ORIGINS:-}
+      LOG_LEVEL:          ${LOG_LEVEL:-info}
+    volumes:
+      - logs:/var/log/rwa-oracle
+    ports:
+      - "127.0.0.1:4000:4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    command: ["node", "dist/server.js"]
+
+  feeder:
+    build: { context: ., target: production }
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      admin-api:
+        condition: service_healthy
+    environment:
+      NODE_ENV:                  production
+      DATABASE_URL:              postgresql://${POSTGRES_USER:-rwa_oracle}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-rwa_oracle}
+      STARKNET_ACCOUNT_ADDRESS:  ${STARKNET_ACCOUNT_ADDRESS:?required}
+      STARKNET_PRIVATE_KEY:      ${STARKNET_PRIVATE_KEY:?required}
+      ORACLE_CONTRACT_ADDRESS:   ${ORACLE_CONTRACT_ADDRESS:?required}
+      STARKNET_RPC_URL:          ${STARKNET_RPC_URL:?required}
+      GOLDAPI_KEY:               ${GOLDAPI_KEY:-}
+      METALPRICEAPI_KEY:         ${METALPRICEAPI_KEY:-}
+      METALS_DEV_KEY:            ${METALS_DEV_KEY:-}
+      ALPHAVANTAGE_API_KEY:      ${ALPHAVANTAGE_API_KEY:-}
+      FEEDER_API_KEY:            ${FEEDER_API_KEY:-}
+      ADMIN_API_URL:             http://admin-api:4000
+      FEED_CRON:                 ${FEED_CRON:-*/15 * * * *}
+      MIN_SOURCES:               ${MIN_SOURCES:-2}
+      MAX_DEVIATION_PCT:         ${MAX_DEVIATION_PCT:-5}
+      AV_FETCH_EVERY_N_CYCLES:   ${AV_FETCH_EVERY_N_CYCLES:-4}
+      AV_DELAY_MS:               ${AV_DELAY_MS:-13000}
+      LOG_LEVEL:                 ${LOG_LEVEL:-info}
+      SMTP_HOST:                 ${SMTP_HOST:-}
+      SMTP_PORT:                 ${SMTP_PORT:-587}
+      SMTP_SECURE:               ${SMTP_SECURE:-false}
+      SMTP_USER:                 ${SMTP_USER:-}
+      SMTP_PASS:                 ${SMTP_PASS:-}
+      SMTP_FROM:                 ${SMTP_FROM:-}
+      JWT_ACCESS_SECRET:         ${JWT_ACCESS_SECRET:?required}
+      JWT_REFRESH_SECRET:        ${JWT_REFRESH_SECRET:?required}
+    volumes:
+      - logs:/var/log/rwa-oracle
+    command: ["node", "dist/index.js"]
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - logs:/var/log/nginx
+    profiles: ["prod"]
+
+volumes:
+  postgres_data:
+  logs:
