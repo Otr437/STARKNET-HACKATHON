@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StarClad Privacy Swap</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #6366f1; --primary-dark: #4f46e5;
+      --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+      --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
+      --text: #f1f5f9; --muted: #94a3b8;
+      --radius: 8px; --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: var(--bg2); border-bottom: 2px solid var(--primary);
+      padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { font-size: 1.2rem; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+    .status { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--muted); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--error); transition: background .3s; }
+    .dot.up { background: var(--success); }
+
+    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 64px); }
+
+    nav { background: var(--bg2); padding: 16px 0; border-right: 1px solid var(--bg3); }
+    .nav-section { padding: 8px 16px; font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 8px; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 10px 20px; background: none; border: none;
+      color: var(--muted); cursor: pointer; font-size: .9rem; text-align: left; transition: all .2s;
+    }
+    .nav-btn:hover, .nav-btn.active { background: rgba(99,102,241,.15); color: var(--text); border-right: 3px solid var(--primary); }
+    .nav-btn .icon { font-size: 1rem; width: 18px; }
+
+    main { padding: 24px; overflow-y: auto; }
+    .page { display: none; } .page.active { display: block; }
+
+    h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 20px; }
+    h3 { font-size: 1rem; font-weight: 600; margin-bottom: 12px; color: var(--muted); }
+
+    .card { background: var(--bg2); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } nav { display: flex; flex-wrap: wrap; } .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+    .form-row { margin-bottom: 12px; }
+    label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px; background: var(--bg3); border: 1px solid #475569;
+      border-radius: 6px; color: var(--text); font-size: .9rem; outline: none; transition: border .2s;
+    }
+    input:focus, select:focus { border-color: var(--primary); }
+    input[type=password] { letter-spacing: .1em; }
+
+    .btn {
+      padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;
+      font-size: .9rem; font-weight: 600; transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--error); color: #fff; }
+    .btn-ghost { background: var(--bg3); color: var(--text); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-sm { padding: 6px 12px; font-size: .8rem; }
+
+    .pre {
+      background: var(--bg3); border-radius: 6px; padding: 12px; font-family: monospace;
+      font-size: .8rem; white-space: pre-wrap; word-break: break-all; max-height: 260px;
+      overflow-y: auto; margin-top: 12px; border: 1px solid #475569;
+    }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: .75rem; font-weight: 600;
+    }
+    .badge-pending { background: rgba(245,158,11,.15); color: var(--warning); }
+    .badge-locked { background: rgba(99,102,241,.15); color: var(--primary); }
+    .badge-completed { background: rgba(16,185,129,.15); color: var(--success); }
+    .badge-refunded, .badge-expired { background: rgba(239,68,68,.15); color: var(--error); }
+
+    .alert {
+      padding: 12px 16px; border-radius: 6px; margin-bottom: 12px; font-size: .875rem;
+      display: flex; align-items: center; gap: 8px; animation: slideIn .25s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+    .alert-success { background: rgba(16,185,129,.1); border: 1px solid var(--success); color: var(--success); }
+    .alert-error { background: rgba(239,68,68,.1); border: 1px solid var(--error); color: var(--error); }
+    .alert-info { background: rgba(99,102,241,.1); border: 1px solid var(--primary); color: var(--primary); }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+    .stat { background: var(--bg3); border-radius: 6px; padding: 16px; text-align: center; }
+    .stat-val { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: .75rem; color: var(--muted); margin-top: 4px; }
+
+    .config-section { background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🔐 StarClad</div>
+  <div class="status">
+    <span id="statusText">Disconnected</span>
+    <div class="dot" id="statusDot"></div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav>
+    <div class="nav-section">Setup</div>
+    <button class="nav-btn active" onclick="nav('config')"><span class="icon">⚙️</span> Config</button>
+
+    <div class="nav-section">Privacy</div>
+    <button class="nav-btn" onclick="nav('notes')"><span class="icon">📝</span> Notes</button>
+    <button class="nav-btn" onclick="nav('proofs')"><span class="icon">🔏</span> Proofs</button>
+
+    <div class="nav-section">Swaps</div>
+    <button class="nav-btn" onclick="nav('swap-init')"><span class="icon">🔄</span> Initiate</button>
+    <button class="nav-btn" onclick="nav('swap-manage')"><span class="icon">📋</span> Manage</button>
+
+    <div class="nav-section">Chain</div>
+    <button class="nav-btn" onclick="nav('bitcoin')"><span class="icon">₿</span> Bitcoin</button>
+    <button class="nav-btn" onclick="nav('starknet')"><span class="icon">⬡</span> Starknet</button>
+
+    <div class="nav-section">System</div>
+    <button class="nav-btn" onclick="nav('stats')"><span class="icon">📊</span> Stats</button>
+  </nav>
+
+  <main>
+    <div id="alerts"></div>
+
+    <!-- CONFIG -->
+    <div id="page-config" class="page active">
+      <h2>API Configuration</h2>
+      <div class="card">
+        <div class="form-row"><label>Backend URL</label><input id="cfg-url" value="http://localhost:3000"></div>
+        <div class="form-row"><label>API Key (optional)</label><input type="password" id="cfg-key" placeholder="sk-..."></div>
+        <button class="btn btn-primary" onclick="app.testConn()">🔌 Test Connection</button>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div id="page-notes" class="page">
+      <h2>Privacy Notes</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Generate Note</h3>
+          <div class="form-row"><label>Amount (satoshis)</label><input type="number" id="note-amount" placeholder="100000"></div>
+          <div class="form-row"><label>Recipient (felt252)</label><input id="note-recipient" placeholder="0x..."></div>
+          <div class="form-row"><label>Secret (optional — 62 hex chars)</label><input id="note-secret" placeholder="auto-generated"></div>
+          <button class="btn btn-primary" onclick="app.generateNote()">Generate Note</button>
+          <div id="note-result" class="pre" style="display:none"></div>
+        </div>
+        <div class="card">
+          <h3>Merkle Tree</h3>
+          <button class="btn btn-ghost" onclick="app.getMerkleRoot()">Get Current Root</button>
+          <div id="merkle-result" class="pre" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROOFS -->
+    <div id="page-proofs" class="page">
+      <h2>Spend Proofs</h2>
+      <div class="card">
+        <h3>Generate Spend Proof</h3>
+        <div class="form-row"><label>Note Commitment</label><input id="proof-commitment" placeholder="0x..."></div>
+        <div class="form-row"><label>Spender Address</label><input id="proof-spender" placeholder="0x..."></div>
+        <button class="btn btn-primary" onclick="app.generateProof()">Generate Proof</button>
+        <div id="proof-result" class="pre" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- SWAP INIT -->
+    <div id="page-swap-init" class="page">
+      <h2>Initiate Swap</h2>
+      <div class="card">
+        <div class="grid2">
+          <div class="form-row"><label>Initiator (felt252)</label><input id="si-initiator" placeholder="0x..."></div>
+          <div class="form-row"><label>Recipient (felt252)</label><input id="si-recipient" placeholder="0x..."></div>
+          <div class="form-row"><label>Amount (satoshis)</label><input type="number" id="si-amount" placeholder="500000"></div>
+          <div class="form-row"><label>Timelock (seconds)</label><input type="number" id="si-timelock" value="3600"></div>
+        </div>
+        <button class="btn btn-primary" onclick="app.initiateSwap()">🔄 Initiate Swap</button>
+        <div id="si-result" class="pre" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- SWAP MANAGE -->
+    <div id="page-swap-manage" class="page">
+      <h2>Manage Swap</h2>
+      <div class="card">
+        <div class="form-row"><label>Swap ID</label><input id="sm-id" placeholder="0x..."></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" onclick="app.getSwap()">🔍 Lookup</button>
+          <button class="btn btn-ghost btn-sm" onclick="app.lockSwap()">🔒 Lock with BTC</button>
+          <button class="btn btn-success btn-sm" onclick="app.completeSwap()">✅ Complete</button>
+          <button class="btn btn-danger btn-sm" onclick="app.refundSwap()">↩ Refund</button>
+        </div>
+        <div id="sm-btc-row" style="display:none;margin-top:12px">
+          <div class="form-row"><label>BTC Transaction ID</label><input id="sm-txid" placeholder="64 hex chars"></div>
+        </div>
+        <div id="sm-secret-row" style="display:none;margin-top:12px">
+          <div class="form-row"><label>HTLC Secret</label><input id="sm-secret" placeholder="64 hex chars"></div>
+        </div>
+        <div id="sm-result" class="pre" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- BITCOIN -->
+    <div id="page-bitcoin" class="page">
+      <h2>Bitcoin SPV</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Generate SPV Proof</h3>
+          <div class="form-row"><label>Bitcoin TXID</label><input id="btc-txid" placeholder="64 hex chars"></div>
+          <button class="btn btn-primary" onclick="app.genSPV()">Generate Proof</button>
+          <div id="btc-result" class="pre" style="display:none"></div>
+        </div>
+        <div class="card">
+          <h3>Fee Estimate</h3>
+          <button class="btn btn-ghost" onclick="app.getFee()">Get Fee Rate (6 blocks)</button>
+          <div id="fee-result" class="pre" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STARKNET -->
+    <div id="page-starknet" class="page">
+      <h2>Starknet</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Contract State</h3>
+          <button class="btn btn-ghost" onclick="app.getSnRoot()">Get Merkle Root</button>
+          <div id="sn-root" class="pre" style="display:none"></div>
+        </div>
+        <div class="card">
+          <h3>Nullifier Check</h3>
+          <div class="form-row"><label>Nullifier</label><input id="sn-null" placeholder="0x..."></div>
+          <button class="btn btn-ghost btn-sm" onclick="app.checkNullifier()">Check Spent</button>
+          <div id="sn-null-result" class="pre" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div id="page-stats" class="page">
+      <h2>System Statistics</h2>
+      <div id="stats-content">
+        <button class="btn btn-primary" onclick="app.loadStats()">Refresh Stats</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+class StarCladApp {
+  constructor() { this.base = ''; this.key = ''; }
+
+  _headers() {
+    const h = { 'Content-Type': 'application/json' };
+    if (this.key) h['X-API-Key'] = this.key;
+    return h;
+  }
+
+  async _call(path, method = 'GET', body = null) {
+    const opts = { method, headers: this._headers() };
+    if (body && method !== 'GET') opts.body = JSON.stringify(body);
+    const res = await fetch(this.base + path, opts);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+    return data;
+  }
+
+  _show(id, data) {
+    const el = document.getElementById(id);
+    el.textContent = JSON.stringify(data, null, 2);
+    el.style.display = 'block';
+  }
+
+  alert(msg, type = 'info') {
+    const div = document.createElement('div');
+    div.className = `alert alert-${type}`;
+    div.textContent = msg;
+    document.getElementById('alerts').appendChild(div);
+    setTimeout(() => div.remove(), 5000);
+  }
+
+  async testConn() {
+    this.base = document.getElementById('cfg-url').value.replace(/\/$/, '');
+    this.key = document.getElementById('cfg-key').value;
+    try {
+      const d = await this._call('/health');
+      document.getElementById('statusDot').classList.add('up');
+      document.getElementById('statusText').textContent = 'Connected';
+      this.alert('Connected! Redis: ' + (d.services?.redis ?? 'ok'), 'success');
+    } catch (e) {
+      document.getElementById('statusDot').classList.remove('up');
+      document.getElementById('statusText').textContent = 'Disconnected';
+      this.alert('Failed: ' + e.message, 'error');
+    }
+  }
+
+  async generateNote() {
+    const amount = document.getElementById('note-amount').value;
+    const recipient = document.getElementById('note-recipient').value;
+    const secret = document.getElementById('note-secret').value || undefined;
+    if (!amount || !recipient) return this.alert('Amount and recipient required', 'error');
+    try {
+      const r = await this._call('/api/notes/generate', 'POST', { amount, recipient, secret });
+      this._show('note-result', r);
+      this.alert('Note generated — save the encryptedNote!', 'success');
+    } catch(e) { this.alert(e.message, 'error'); }
+  }
+
+  async getMerkleRoot() {
+    try { this._show('merkle-result', await this._call('/api/notes/merkle-root')); } catch(e) { this.alert(e.message,'error'); }
+  }
+
+  async generateProof() {
+    const commitment = document.getElementById('proof-commitment').value;
+    const spender = document.getElementById('proof-spender').value;
+    if (!commitment || !spender) return this.alert('Commitment and spender required', 'error');
+    try {
+      this._show('proof-result', await this._call('/api/proofs/spend', 'POST', { commitment, spender }));
+      this.alert('Proof generated', 'success');
+    } catch(e) { this.alert(e.message, 'error'); }
+  }
+
+  async initiateSwap() {
+    const initiator = document.getElementById('si-initiator').value;
+    const recipient = document.getElementById('si-recipient').value;
+    const amount = document.getElementById('si-amount').value;
+    const timelockDuration = parseInt(document.getElementById('si-timelock').value);
+    if (!initiator || !recipient || !amount) return this.alert('Fill all fields', 'error');
+    try {
+      const r = await this._call('/api/swaps/initiate', 'POST', { initiator, recipient, amount, timelockDuration });
+      this._show('si-result', r);
+      this.alert('⚠ Swap initiated! Save htlcSecret securely.', 'success');
+    } catch(e) { this.alert(e.message, 'error'); }
+  }
+
+  async getSwap() {
+    const id = document.getElementById('sm-id').value;
+    if (!id) return this.alert('Swap ID required', 'error');
+    try { this._show('sm-result', await this._call(`/api/swaps/${id}`)); } catch(e) { this.alert(e.message,'error'); }
+  }
+
+  lockSwap() {
+    document.getElementById('sm-btc-row').style.display = 'block';
+    document.getElementById('sm-secret-row').style.display = 'none';
+    this.alert('Enter the BTC TXID, then click Lock again', 'info');
+    const txid = document.getElementById('sm-txid').value;
+    if (!txid) return;
+    const id = document.getElementById('sm-id').value;
+    this._call('/api/swaps/lock', 'POST', { swapId: id, btcTxid: txid })
+      .then(r => { this._show('sm-result', r); this.alert('Swap locked', 'success'); })
+      .catch(e => this.alert(e.message, 'error'));
+  }
+
+  completeSwap() {
+    document.getElementById('sm-secret-row').style.display = 'block';
+    document.getElementById('sm-btc-row').style.display = 'none';
+    const secret = document.getElementById('sm-secret').value;
+    if (!secret) return this.alert('Enter HTLC secret first', 'info');
+    const id = document.getElementById('sm-id').value;
+    this._call('/api/swaps/complete', 'POST', { swapId: id, secret })
+      .then(r => { this._show('sm-result', r); this.alert('Swap completed!', 'success'); })
+      .catch(e => this.alert(e.message, 'error'));
+  }
+
+  refundSwap() {
+    const id = document.getElementById('sm-id').value;
+    if (!id) return this.alert('Swap ID required', 'error');
+    this._call('/api/swaps/refund', 'POST', { swapId: id })
+      .then(r => { this._show('sm-result', r); this.alert('Swap refunded', 'success'); })
+      .catch(e => this.alert(e.message, 'error'));
+  }
+
+  async genSPV() {
+    const txid = document.getElementById('btc-txid').value;
+    if (!txid) return this.alert('TXID required', 'error');
+    try {
+      this._show('btc-result', await this._call('/api/btc/spv-proof', 'POST', { txid }));
+      this.alert('SPV proof generated', 'success');
+    } catch(e) { this.alert(e.message, 'error'); }
+  }
+
+  async getFee() {
+    try { this._show('fee-result', await this._call('/api/btc/fee-estimate')); } catch(e) { this.alert(e.message,'error'); }
+  }
+
+  async getSnRoot() {
+    try { this._show('sn-root', await this._call('/api/starknet/merkle-root')); } catch(e) { this.alert(e.message,'error'); }
+  }
+
+  async checkNullifier() {
+    const n = document.getElementById('sn-null').value;
+    if (!n) return this.alert('Nullifier required', 'error');
+    try { this._show('sn-null-result', await this._call(`/api/starknet/nullifier/${n}`)); } catch(e) { this.alert(e.message,'error'); }
+  }
+
+  async loadStats() {
+    try {
+      const [stats, metrics] = await Promise.all([
+        this._call('/api/swaps/stats'),
+        this._call('/metrics'),
+      ]);
+      const html = `
+        <div class="stat-grid" style="margin-bottom:16px">
+          <div class="stat"><div class="stat-val">${stats.total}</div><div class="stat-label">Total Swaps</div></div>
+          <div class="stat"><div class="stat-val">${stats.pending}</div><div class="stat-label">Pending</div></div>
+          <div class="stat"><div class="stat-val">${stats.locked}</div><div class="stat-label">Locked</div></div>
+          <div class="stat"><div class="stat-val">${stats.completed}</div><div class="stat-label">Completed</div></div>
+          <div class="stat"><div class="stat-val">${stats.refunded}</div><div class="stat-label">Refunded</div></div>
+          <div class="stat"><div class="stat-val">${stats.expired}</div><div class="stat-label">Expired</div></div>
+        </div>
+        <div class="card">
+          <h3>Swap Volume</h3>
+          <div class="pre">${JSON.stringify({totalVolume: stats.totalVolume, avgCompletionTimeMs: stats.avgCompletionTimeMs}, null, 2)}</div>
+        </div>
+        <div class="card">
+          <h3>Note Manager</h3>
+          <div class="pre">${JSON.stringify(metrics.notes, null, 2)}</div>
+        </div>
+        <div class="card">
+          <h3>Poseidon Hasher</h3>
+          <div class="pre">${JSON.stringify(metrics.poseidon, null, 2)}</div>
+        </div>`;
+      document.getElementById('stats-content').innerHTML = `<button class="btn btn-ghost btn-sm" onclick="app.loadStats()" style="margin-bottom:16px">↻ Refresh</button>` + html;
+    } catch(e) { this.alert(e.message, 'error'); }
+  }
+}
+
+const app = new StarCladApp();
+
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>

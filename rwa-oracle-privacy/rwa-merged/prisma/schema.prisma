@@ -1,0 +1,200 @@
+// prisma/schema.prisma — RWA Oracle PostgreSQL Schema (PRODUCTION)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+enum SubmitStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  SKIPPED
+}
+
+enum AlertType {
+  PRICE_STALE
+  DEVIATION_HIGH
+  SUBMISSION_FAILED
+  SOURCE_DOWN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  role          Role      @default(VIEWER)
+  active        Boolean   @default(true)
+  mfaSecret     String?
+  mfaEnabled    Boolean   @default(false)
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+  failedLogins  Int       @default(0)
+  lockedUntil   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions  Session[]
+  apiKeys   ApiKey[]
+  auditLogs AuditLog[]
+
+  @@index([email])
+  @@index([active])
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  ipAddress  String
+  userAgent  String?
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  keyHash    String    @unique
+  keyPrefix  String
+  userId     String
+  scopes     String[]
+  active     Boolean   @default(true)
+  lastUsedAt DateTime?
+  lastUsedIp String?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([keyHash])
+  @@index([userId])
+  @@index([active])
+}
+
+model Asset {
+  id            String    @id @default(cuid())
+  assetId       String    @unique
+  symbol        String
+  decimals      Int
+  assetType     String
+  active        Boolean   @default(true)
+  onChainTxHash String?
+  registeredAt  DateTime?
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  priceFeeds   PriceFeed[]
+  priceHistory PriceHistory[]
+  alertRules   AlertRule[]
+
+  @@index([assetId])
+  @@index([active])
+  @@index([assetType])
+}
+
+// Raw per-source readings — one row per source per fetch cycle
+model PriceFeed {
+  id        String   @id @default(cuid())
+  assetId   String
+  source    String
+  price     Decimal  @db.Decimal(30, 10)
+  timestamp DateTime
+  fetchedAt DateTime @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [assetId])
+
+  // Prevent duplicate raw readings for same source+asset+timestamp
+  @@unique([assetId, source, timestamp])
+  @@index([assetId, source])
+  @@index([fetchedAt])
+  @@index([timestamp])
+}
+
+// Aggregated prices submitted on-chain
+model PriceHistory {
+  id           String       @id @default(cuid())
+  assetId      String
+  medianPrice  Decimal      @db.Decimal(30, 10)
+  sourceCount  Int
+  sources      String[]
+  onChainPrice BigInt
+  timestamp    DateTime
+  txHash       String?
+  blockNumber  BigInt?
+  submittedAt  DateTime     @default(now())
+  status       SubmitStatus @default(PENDING)
+  errorMessage String?
+
+  asset Asset @relation(fields: [assetId], references: [assetId])
+
+  @@index([assetId])
+  @@index([assetId, status])      // most common query pattern
+  @@index([timestamp])
+  @@index([submittedAt])
+  @@index([status])
+  @@index([txHash])
+}
+
+// Immutable audit log — never update or delete
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String?
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  success   Boolean
+  errorMsg  String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([success])
+}
+
+// Alert rules — fire webhooks/emails when thresholds breached
+model AlertRule {
+  id               String    @id @default(cuid())
+  assetId          String
+  type             AlertType
+  threshold        Decimal   @db.Decimal(20, 6)
+  webhookUrl       String?
+  emailRecipients  String[]
+  active           Boolean   @default(true)
+  lastTriggeredAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [assetId])
+
+  @@index([assetId])
+  @@index([type, active])
+  @@index([active])
+}
