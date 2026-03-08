@@ -10,6 +10,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import fs from 'fs';
 import Redis from 'ioredis';
+import rateLimit from 'express-rate-limit';
 import { SecureKeyManager } from './encryption';
 import { PoseidonHasher } from './poseidon';
 import { NoteCommitmentManager } from './note-manager';
@@ -119,8 +120,15 @@ export class PrivacySwapServer {
   private _setupRoutes(): void {
     const r = express.Router();
 
+    const healthLimiter = rateLimit({
+      windowMs: 60 * 1000,
+      max: 30,
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+
     // ── Health ───────────────────────────────────────────────────────────────
-    this.app.get('/health', async (_req, res) => {
+    this.app.get('/health', healthLimiter, async (_req, res) => {
       try {
         await this.redis.ping();
         res.json({ status: 'ok', uptime: process.uptime(), ts: Date.now(), services: { redis: 'up', poseidon: this.hasher.getMetrics() } });
