@@ -107,11 +107,19 @@ export class PrivacySwapServer {
   }
 
   private _setupMiddleware(): void {
+    const globalLimiter = rateLimit({
+      windowMs: 60 * 1000, // 1 minute
+      max: this.cfg.maxRpm,
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+
     this.app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"] } } }));
     this.app.use(compression());
     this.app.use(cors({ origin: this.cfg.corsOrigins, credentials: true }));
     this.app.use(express.json({ limit: '1mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+    this.app.use(globalLimiter);
     this.app.use(this.middleware.requestLogger());
     this.app.use(this.middleware.rateLimiter());
     if (this.cfg.requireApiKey) this.app.use(this.middleware.apiKeyAuth());
