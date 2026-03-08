@@ -1561,7 +1561,21 @@ function log(msg, type = 'info') {
   const ts = new Date().toLocaleTimeString();
   const tagClass = type === 'err' ? 'tag-err' : type === 'ok' ? 'tag-ok' : 'tag-inf';
   const tagLabel = type === 'err' ? 'ERR' : type === 'ok' ? 'OK' : 'INFO';
-  div.innerHTML = `<span class="ts">${ts}</span><span class="tag ${tagClass}">${tagLabel}</span>${msg}`;
+
+  const tsSpan = document.createElement('span');
+  tsSpan.className = 'ts';
+  tsSpan.textContent = ts;
+
+  const tagSpan = document.createElement('span');
+  tagSpan.className = 'tag ' + tagClass;
+  tagSpan.textContent = tagLabel;
+
+  const msgNode = document.createTextNode(msg);
+
+  div.appendChild(tsSpan);
+  div.appendChild(tagSpan);
+  div.appendChild(msgNode);
+
   logEl.insertBefore(div, logEl.firstChild);
   while (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
 }
