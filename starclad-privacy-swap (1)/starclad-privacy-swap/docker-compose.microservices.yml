@@ -1,0 +1,194 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: privacy-swap-postgres
+    environment:
+      POSTGRES_DB: privacy_swap
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: privacy-swap-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Proof Generation Service
+  proof-service:
+    build:
+      context: ../../microservices/proof-generation-service
+      dockerfile: Dockerfile
+    container_name: proof-generation-service
+    environment:
+      PORT: 3001
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ../../circuits:/app/circuits:ro
+
+  # Merkle Tree Service
+  merkle-service:
+    build:
+      context: ../../microservices/merkle-tree-service
+      dockerfile: Dockerfile
+    container_name: merkle-tree-service
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/privacy_swap
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Blockchain Monitor Service
+  monitor-service:
+    build:
+      context: ../../microservices/blockchain-monitor-service
+      dockerfile: Dockerfile
+    container_name: blockchain-monitor-service
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/privacy_swap
+      REDIS_URL: redis://redis:6379
+      BITCOIN_RPC_URL: ${BITCOIN_RPC_URL}
+      BITCOIN_RPC_USER: ${BITCOIN_RPC_USER}
+      BITCOIN_RPC_PASS: ${BITCOIN_RPC_PASS}
+      ETHEREUM_RPC: ${ETHEREUM_RPC}
+      STARKNET_RPC: ${STARKNET_RPC}
+      SWAP_CONTRACT_ADDRESS: ${SWAP_CONTRACT_ADDRESS}
+      STARKNET_SWAP_CONTRACT: ${STARKNET_SWAP_CONTRACT}
+      NODE_ENV: production
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Webhook Service
+  webhook-service:
+    build:
+      context: ../../microservices/webhook-service
+      dockerfile: Dockerfile
+    container_name: webhook-service
+    environment:
+      PORT: 3004
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/privacy_swap
+      REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: production
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Swap Coordinator Service
+  swap-service:
+    build:
+      context: ../../microservices/swap-coordinator-service
+      dockerfile: Dockerfile
+    container_name: swap-coordinator-service
+    environment:
+      PORT: 3005
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/privacy_swap
+      REDIS_URL: redis://redis:6379
+      PROOF_SERVICE_URL: http://proof-service:3001
+      MERKLE_SERVICE_URL: http://merkle-service:3002
+      NODE_ENV: production
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      proof-service:
+        condition: service_started
+      merkle-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../../microservices/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/privacy_swap
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      PROOF_SERVICE_URL: http://proof-service:3001
+      MERKLE_SERVICE_URL: http://merkle-service:3002
+      MONITOR_SERVICE_URL: http://monitor-service:3003
+      WEBHOOK_SERVICE_URL: http://webhook-service:3004
+      SWAP_SERVICE_URL: http://swap-service:3005
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      proof-service:
+        condition: service_started
+      merkle-service:
+        condition: service_started
+      monitor-service:
+        condition: service_started
+      webhook-service:
+        condition: service_started
+      swap-service:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: privacy-swap-network

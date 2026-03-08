@@ -1,0 +1,24 @@
+[package]
+name    = "rwa_oracle"
+version = "2.0.0"
+edition = "2024_07"
+
+# ── StarkNet dependency ───────────────────────────────────────
+# Pinned for reproducible production builds.
+# Cairo 2.13.1 / Sierra 1.7.0
+[dependencies]
+starknet = "=2.13.1"
+
+# ── Dev / test dependencies ───────────────────────────────────
+# snforge v0.44.0 is the correct version for Scarb/Cairo 2.13.x
+[dev-dependencies]
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.44.0" }
+
+# ── Build targets ─────────────────────────────────────────────
+[[target.starknet-contract]]
+sierra = true   # Sierra JSON — used by starkli for deployment
+casm   = true   # CASM      — used for local execution / testing
+
+# ── Cairo compiler flags ──────────────────────────────────────
+[cairo]
+sierra-replace-ids = true   # human-readable Sierra identifiers in output
