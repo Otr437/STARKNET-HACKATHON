@@ -7,6 +7,9 @@ import { poseidon2 } from 'poseidon-lite';
 const app = express();
 app.use(express.json());
 
+// Maximum allowed Merkle proof depth to prevent denial-of-service via large paths
+const MAX_MERKLE_DEPTH = 64;
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/privacy_swap',
 });
@@ -266,9 +269,24 @@ app.post('/verify-proof', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Validate that path and pathIndices are arrays of reasonable, matching length
+    if (!Array.isArray(path) || !Array.isArray(pathIndices)) {
+      return res.status(400).json({ error: 'path and pathIndices must be arrays' });
+    }
+
+    if (path.length !== pathIndices.length) {
+      return res.status(400).json({ error: 'path and pathIndices must have the same length' });
+    }
+
+    if (path.length === 0 || path.length > MAX_MERKLE_DEPTH) {
+      return res.status(400).json({ error: `Invalid Merkle path length` });
+    }
+
+    const pathLength = path.length;
+
     let current = commitment;
 
-    for (let i = 0; i < path.length; i++) {
+    for (let i = 0; i < pathLength; i++) {
       const isRight = pathIndices[i] === 1;
       const sibling = path[i];
 
