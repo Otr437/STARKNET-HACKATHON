@@ -4,9 +4,17 @@ import Redis from 'ioredis';
 import axios from 'axios';
 import { createHmac, randomBytes } from 'crypto';
 import { Queue, Worker, QueueEvents } from 'bullmq';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 app.use(express.json());
+
+const testWebhookLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 test requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/privacy_swap',
@@ -403,7 +411,7 @@ app.get('/subscriptions/:id/deliveries', async (req, res) => {
 });
 
 // Test webhook endpoint
-app.post('/test/:id', async (req, res) => {
+app.post('/test/:id', testWebhookLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     
