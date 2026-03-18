@@ -183,7 +183,7 @@ app.post('/api-keys', async (req, res) => {
 
     // Generate API key
     const apiKey = randomBytes(32).toString('hex');
-    const keyHash = createHash('sha256').update(apiKey).digest('hex');
+    const keyHash = await bcrypt.hash(apiKey, 12);
 
     const result = await pool.query(
       `INSERT INTO api_keys (
