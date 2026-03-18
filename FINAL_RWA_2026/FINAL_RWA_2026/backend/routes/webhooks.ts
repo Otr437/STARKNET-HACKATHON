@@ -1,7 +1,14 @@
 import express, { Request, Response } from 'express';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 
 const webhookRouter = express.Router();
+
+// Rate limiter for webhook endpoints
+const webhookLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 webhook requests per windowMs
+});
 
 // Webhook secret for verification
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
@@ -20,7 +27,7 @@ function verifyWebhookSignature(payload: string, signature: string): boolean {
 }
 
 // Webhook endpoint for external services
-webhookRouter.post('/webhook/rwa-created', (req: Request, res: Response) => {
+webhookRouter.post('/webhook/rwa-created', webhookLimiter, (req: Request, res: Response) => {
   try {
     const signature = req.headers['x-webhook-signature'] as string;
     const payload = JSON.stringify(req.body);
@@ -48,7 +55,7 @@ webhookRouter.post('/webhook/rwa-created', (req: Request, res: Response) => {
   }
 });
 
-webhookRouter.post('/webhook/deposit', (req: Request, res: Response) => {
+webhookRouter.post('/webhook/deposit', webhookLimiter, (req: Request, res: Response) => {
   try {
     const signature = req.headers['x-webhook-signature'] as string;
     const payload = JSON.stringify(req.body);
@@ -75,7 +82,7 @@ webhookRouter.post('/webhook/deposit', (req: Request, res: Response) => {
   }
 });
 
-webhookRouter.post('/webhook/redeem', (req: Request, res: Response) => {
+webhookRouter.post('/webhook/redeem', webhookLimiter, (req: Request, res: Response) => {
   try {
     const signature = req.headers['x-webhook-signature'] as string;
     const payload = JSON.stringify(req.body);
