@@ -13,7 +13,8 @@
     "ioredis": "^5.3.2",
     "axios": "^1.6.2",
     "bullmq": "^4.15.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "express-rate-limit": "^8.3.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
