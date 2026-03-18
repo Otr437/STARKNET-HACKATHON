@@ -5,9 +5,15 @@ import axios from 'axios';
 import { WebSocketProvider, Contract, ethers } from 'ethers';
 import { RpcProvider, Account, Contract as StarknetContract } from 'starknet';
 import * as bitcoin from 'bitcoinjs-lib';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 app.use(express.json());
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/privacy_swap',
@@ -299,7 +305,7 @@ async function startMonitoring() {
 }
 
 // API endpoints
-app.get('/status/:chain', async (req, res) => {
+app.get('/status/:chain', apiLimiter, async (req, res) => {
   try {
     const { chain } = req.params;
     const lastBlock = await redis.get(`${chain}:last_block`);
@@ -310,11 +316,11 @@ app.get('/status/:chain', async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
-app.get('/commitment/:txHash', async (req, res) => {
+app.get('/commitment/:txHash', apiLimiter, async (req, res) => {
   try {
     const { txHash } = req.params;
     
@@ -335,7 +341,7 @@ app.get('/commitment/:txHash', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
