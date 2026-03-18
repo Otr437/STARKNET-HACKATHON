@@ -4,9 +4,17 @@ import Redis from 'ioredis';
 import axios from 'axios';
 import { randomBytes } from 'crypto';
 import { poseidon1, poseidon2, poseidon3, poseidon4 } from 'poseidon-lite';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 app.use(express.json());
+
+const swapsListLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/privacy_swap',
@@ -347,7 +355,7 @@ app.put('/swaps/:swapId/status', async (req, res) => {
 });
 
 // List swaps
-app.get('/swaps', async (req, res) => {
+app.get('/swaps', swapsListLimiter, async (req, res) => {
   try {
     const { status, chain, limit = 50, offset = 0 } = req.query;
 
