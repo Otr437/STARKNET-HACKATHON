@@ -16,6 +16,13 @@ const testWebhookLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const subscriptionWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 subscription write operations per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const deliveriesLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 delivery history requests per windowMs
@@ -379,7 +386,7 @@ app.put('/subscriptions/:id', async (req, res) => {
 });
 
 // Delete subscription
-app.delete('/subscriptions/:id', async (req, res) => {
+app.delete('/subscriptions/:id', subscriptionWriteLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
