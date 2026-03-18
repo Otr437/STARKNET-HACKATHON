@@ -16,6 +16,11 @@ const testWebhookLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const getSubscriptionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs for getting subscriptions
+});
+
 const createSubscriptionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 50, // limit each IP to 50 subscription creation requests per windowMs
@@ -330,7 +335,7 @@ app.post('/subscriptions', createSubscriptionLimiter, async (req, res) => {
 });
 
 // Get subscription
-app.get('/subscriptions/:id', async (req, res) => {
+app.get('/subscriptions/:id', getSubscriptionLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
