@@ -19,7 +19,8 @@
     "ioredis": "^5.3.2",
     "nodemailer": "^6.9.13",
     "mixpanel": "^0.18.0",
-    "@amplitude/node": "^1.10.2"
+    "@amplitude/node": "^1.10.2",
+    "express-rate-limit": "^8.3.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
