@@ -16,6 +16,13 @@ const testWebhookLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const deliveriesLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 delivery history requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/privacy_swap',
 });
@@ -391,7 +398,7 @@ app.delete('/subscriptions/:id', async (req, res) => {
 });
 
 // Get delivery history
-app.get('/subscriptions/:id/deliveries', async (req, res) => {
+app.get('/subscriptions/:id/deliveries', deliveriesLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { limit = 50, offset = 0 } = req.query;
