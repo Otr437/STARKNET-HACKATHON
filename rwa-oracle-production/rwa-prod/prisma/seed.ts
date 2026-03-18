@@ -56,8 +56,8 @@ async function main() {
       },
     });
     console.log(`✓ Created SUPER_ADMIN: ${admin.email} (id: ${admin.id})`);
-    console.log(`  ⚠️  Default password: ${SEED_PASSWORD}`);
-    console.log(`  ⚠️  CHANGE THIS IMMEDIATELY after first login!\n`);
+    console.log("  ⚠️  A default password has been set for the SUPER_ADMIN account.");
+    console.log("  ⚠️  CHANGE THIS IMMEDIATELY after first login or via your user management UI.\n");
   }
 
   // ── Seed Assets ───────────────────────────────────────────
