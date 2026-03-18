@@ -932,14 +932,31 @@ function renderPool() {
     return;
   }
 
-  feed.innerHTML = deps.map((d, i) => `
-    <div class="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gray-950 border border-gray-800/50 text-xs mb-2 anim-in">
-      <span class="w-8 text-right text-gray-600 mono flex-shrink-0">#${d.leafIndex ?? i}</span>
-      <span class="flex-1 mono text-violet-300 truncate" title="${d.commitment}">${d.commitment}</span>
-      <span class="text-gray-600 flex-shrink-0 hidden sm:block">${
-        d.timestamp ? new Date(d.timestamp * 1000).toLocaleString() : ''
-      }</span>
-    </div>`).join('');
+  // Clear existing content before rendering new items
+  feed.innerHTML = '';
+
+  deps.forEach((d, i) => {
+    const container = document.createElement('div');
+    container.className = 'flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gray-950 border border-gray-800/50 text-xs mb-2 anim-in';
+
+    const idxSpan = document.createElement('span');
+    idxSpan.className = 'w-8 text-right text-gray-600 mono flex-shrink-0';
+    idxSpan.textContent = '#' + (d.leafIndex ?? i);
+    container.appendChild(idxSpan);
+
+    const commitSpan = document.createElement('span');
+    commitSpan.className = 'flex-1 mono text-violet-300 truncate';
+    commitSpan.title = String(d.commitment ?? '');
+    commitSpan.textContent = String(d.commitment ?? '');
+    container.appendChild(commitSpan);
+
+    const tsSpan = document.createElement('span');
+    tsSpan.className = 'text-gray-600 flex-shrink-0 hidden sm:block';
+    tsSpan.textContent = d.timestamp ? new Date(d.timestamp * 1000).toLocaleString() : '';
+    container.appendChild(tsSpan);
+
+    feed.appendChild(container);
+  });
 }
 
 function updateStats() {
